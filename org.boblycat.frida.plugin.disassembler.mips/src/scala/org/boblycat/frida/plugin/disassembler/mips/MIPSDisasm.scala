@@ -1,7 +1,7 @@
 package frida.disasm.mips;
 
-import frida.disasm.Instr
-import frida.disasm.Disassembler
+import org.boblycat.frida.core.disassembler.Disassembler
+import org.boblycat.frida.core.disassembler.Instr
 
 object InstructionDescription {
 	val R = 1
@@ -49,7 +49,7 @@ class J(
 
 class MIPSDisasm extends Disassembler {
 
-	import frida.core.BitUtils.{stringToBinary => toBin}
+	import org.boblycat.frida.core.BitUtils.{stringToBinary => toBin}
 	
 	val registers = Map[Int,String](
 			0 -> "$zero",

@@ -1,10 +1,10 @@
-package frida
+package org.boblycat.frida
 
 import java.io.RandomAccessFile
 import java.io.FileReader
 import java.io.FileInputStream
 import java.io.BufferedReader
-import frida.disasm.DisassemblerFactory
+import org.boblycat.frida.core.disassembler.DisassemblerFactory
 
 object Main {
 
@@ -59,7 +59,7 @@ object Main {
 		}
 		
 		val da = DisassemblerFactory.create(machine)
-		da.asInstanceOf[ARMDisasm].dumpTable()
+		//da.asInstanceOf[MIPS].dumpTable()
 		val binChunk = loadBytes(file)
 		val instrs = da.disassemble(binChunk)
 		for(i <- instrs) {

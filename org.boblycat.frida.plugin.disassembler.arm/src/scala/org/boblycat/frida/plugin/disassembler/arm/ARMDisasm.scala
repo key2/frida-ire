@@ -2,7 +2,7 @@ package org.boblycat.frida.plugin.disassembler.arm
 
 import org.boblycat.frida.core.FridaException
 import org.boblycat.frida.core.disassembler.Instr
-import org.boblycat.firda.core.disassember.Disassembler
+import org.boblycat.frida.core.disassembler.Disassembler
 import org.boblycat.frida.core.PrintUtils
 
 class I(
@@ -14,6 +14,7 @@ class InstructionDescriptor(
 		val fmt : String,
 		val mask : Short,
 		val pattern : Short) {
+	
 	override def toString = name + ", fmt=" + fmt + ", mask=" + PrintUtils.toBinaryString(mask) + ", pattern=" + PrintUtils.toBinaryString(pattern)
 	
 	def matches(bits : Short) = (bits & mask) == pattern
