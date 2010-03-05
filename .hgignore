@@ -1,0 +1,10 @@
+syntax: glob
+.metadata
+.scala_dependencies
+bin/.keep
+*~
+
+syntax: regexp
+\.bin$
+syntax: regexp
+\.class$
