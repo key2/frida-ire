@@ -1,0 +1,9 @@
+ 
+ * Download the following libraries:
+ 
+  - Apache Pivot
+    =  http://mirrors.powertech.no/www.apache.org/dist/pivot/binaries/apache-pivot-1.4.tar.gz
+    
+    * pivot-core-1.4.jar
+    * pivot-wtk-1.4.jar
+    * pivot-wtk-terra-1.4.jar
