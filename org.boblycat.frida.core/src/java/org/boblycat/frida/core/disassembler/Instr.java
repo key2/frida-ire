@@ -1,5 +1,6 @@
 package org.boblycat.frida.core.disassembler;
 
-public class Instr {
+abstract public class Instr {
 
+	public abstract String name();
 }

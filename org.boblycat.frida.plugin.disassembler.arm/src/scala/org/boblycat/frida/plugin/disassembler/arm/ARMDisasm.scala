@@ -7,7 +7,9 @@ import org.boblycat.frida.core.PrintUtils
 
 class I(
 		val id : InstructionDescriptor
-		) extends Instr
+		) extends Instr {
+	def name = id.name 
+}
 		
 class InstructionDescriptor(
 		val name : String,
@@ -23,7 +25,7 @@ class InstructionDescriptor(
 	}
 }
 
-class ARMInstr extends Instr
+abstract class ARMInstr extends Instr
 
 class ARMDisasm extends Disassembler {
 

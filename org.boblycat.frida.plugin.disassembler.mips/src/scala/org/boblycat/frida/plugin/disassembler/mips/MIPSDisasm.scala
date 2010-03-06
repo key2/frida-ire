@@ -26,6 +26,7 @@ class MIPSInstr(
 	val op : Byte // 6 bits
 	) extends Instr { 
 	override def toString = MIPSDisasm.instrToString(this)
+	override def name = MIPSDisasm.instrName(op)
 }
 
 class R(
@@ -43,7 +44,6 @@ class I (
 	val rt : Byte, // 5 bits
 	val imm : Int) // 16 bits
 	extends MIPSInstr(op) {
-	
 }
 
 class J(
@@ -165,6 +165,8 @@ object MIPSDisasm {
 		new InstructionDescription(toBin(op).toByte, 0.toByte, InstructionDescription.J, name, desc)
 	}
 
+	def instrName(op : Byte) : String = resolveOp(op, 0).name
+	
 		def instrToString(ins : MIPSInstr) : String = {
 		if(ins.isInstanceOf[R]) {
 			val rop = resolveOp(ins.op, ins.asInstanceOf[R].funct)
