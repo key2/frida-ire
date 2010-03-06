@@ -1,10 +1,16 @@
 package org.boblycat.frida.core.disassembler;
 
-import org.boblycat.frida.core.NotImplementedException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class DisassemblerFactory {
 
+	private static Map<String, Disassembler> knownDisassemblers = new HashMap<String, Disassembler>();
+	
+	public static void addDisassembler(String name, Disassembler newDisasm) {
+		knownDisassemblers.put(name, newDisasm);
+	}
 	public static Disassembler create(String machine) {
-		throw new NotImplementedException("");
+		return knownDisassemblers.get(machine);
 	}
 }

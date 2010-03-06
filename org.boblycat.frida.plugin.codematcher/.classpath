@@ -5,5 +5,7 @@
 	<classpathentry kind="src" path="src/resources"/>
 	<classpathentry kind="con" path="ch.epfl.lamp.sdt.launching.SCALA_CONTAINER"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.boblycat.frida.core"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/org.boblycat.frida.plugin.disassembler.mips"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

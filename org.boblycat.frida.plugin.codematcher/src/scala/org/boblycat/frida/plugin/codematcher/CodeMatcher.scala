@@ -1,7 +1,8 @@
 package frida.matcher
 
 class CodeChunk {}
-class Instr {}
+class InstrPattern {}
+
 
 object CodeMatcher {
 	
@@ -11,8 +12,9 @@ object CodeMatcher {
 abstract class CodePattern {
 
 	
-	def oneOrMore(ins : Instr)
-	def one(ins : Instr)
+	def instr(ins : InstrPattern)
+	def oneOrMore(ins : CodePattern)
+	def sequence(ins : CodePattern*)
 	def before(p : CodePattern)
 	def after(p : CodePattern)
 	def readFrom()

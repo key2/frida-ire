@@ -1,7 +1,8 @@
-package frida.disasm.mips;
+package org.boblycat.frida.plugin.disassembler.mips;
 
 import org.boblycat.frida.core.disassembler.Disassembler
 import org.boblycat.frida.core.disassembler.Instr
+import org.boblycat.frida.core.disassembler.DisassemblerFactory
 
 object InstructionDescription {
 	val R = 1
@@ -23,7 +24,9 @@ object StringFmt {
 
 class MIPSInstr(
 	val op : Byte // 6 bits
-	) extends Instr { }
+	) extends Instr { 
+	override def toString = MIPSDisasm.instrToString(this)
+}
 
 class R(
 	    op : Byte, // 6 bits
@@ -39,7 +42,9 @@ class I (
 	val rs : Byte, // 5 bits
 	val rt : Byte, // 5 bits
 	val imm : Int) // 16 bits
-	extends MIPSInstr(op) {}
+	extends MIPSInstr(op) {
+	
+}
 
 class J(
 		op : Byte, // 6 bits
@@ -47,11 +52,8 @@ class J(
     extends MIPSInstr(op) {}
 
 
-class MIPSDisasm extends Disassembler {
-
-	import org.boblycat.frida.core.BitUtils.{stringToBinary => toBin}
-	
-	val registers = Map[Int,String](
+object MIPSDisasm {
+		val registers = Map[Int,String](
 			0 -> "$zero",
 			1 -> "$?1",
 			2 -> "$v0",
@@ -134,7 +136,51 @@ class MIPSDisasm extends Disassembler {
 				makeR("XOR", "Bitwise exclusive or", "000000ss ssst tttt dddd d--- --10 0110"),
 				makeI("XORI", "Bitwise exclusive or immediate", "001110ss ssst tttt iiii iiii iiii iiii")
 		)
-		
+	
+	import org.boblycat.frida.core.BitUtils.{stringToBinary => toBin}
+	
+	def makeR(name : String, desc : String, format : String) : InstructionDescription = {
+		val fmt = format.replace(" ", "")
+		val op = fmt.substring(0, 6)
+//		val rs = fmt.substring(6, 11)
+//		val rt = fmt.substring(11,16)
+//		val rd = fmt.substring(16, 21)
+//		val shamt = fmt.substring(21, 26)
+		val funct = fmt.substring(26, 32) 
+		new InstructionDescription(toBin(op).toByte, toBin(funct).toByte, InstructionDescription.R, name, desc)
+	}
+	
+	def makeI(name : String, desc : String, format : String) : InstructionDescription = {
+		val fmt = format.replace(" ", "")
+		val op = fmt.substring(0, 6)
+//		val rs = fmt.substring(7,11)
+//		val rt = fmt.substring(12,16)
+//		val imm = fmt.substring(16, 32) 
+		new InstructionDescription(toBin(op).toByte, 0.toByte, InstructionDescription.I, name, desc)
+	}
+	
+	def makeJ(name : String, desc : String, format : String) : InstructionDescription = {
+		val op = format.substring(0, 6)
+//		val tgt = format.substring(7, 32) 
+		new InstructionDescription(toBin(op).toByte, 0.toByte, InstructionDescription.J, name, desc)
+	}
+
+		def instrToString(ins : MIPSInstr) : String = {
+		if(ins.isInstanceOf[R]) {
+			val rop = resolveOp(ins.op, ins.asInstanceOf[R].funct)
+			val r = ins.asInstanceOf[R]
+			StringFmt.pad(rop.name, 8) + "rs = " + registers(r.rs) + ", rt = " + registers(r.rt) + ", rd = " + registers(r.rd)
+		} else {
+			val rop = resolveOp(ins.op, 0)
+			if(ins.isInstanceOf[J]) { 
+				StringFmt.pad(rop.name, 8) + String.format("0x%x", new Integer(ins.asInstanceOf[J].tgt))
+			} else {
+				val i = ins.asInstanceOf[I]
+				StringFmt.pad(rop.name, 8) + "rs = " + registers(i.rs) + ", rt = " + registers(i.rt) + ", imm = " + i.imm 
+			}
+		}
+			
+	}
 
 	def resolveOp(op : Byte, funct : Byte) : InstructionDescription = {
 		for(i <- instrSet) {
@@ -148,6 +194,16 @@ class MIPSDisasm extends Disassembler {
 		throw new RuntimeException("Unknown instruction : " + op)
 	}
 	
+
+	DisassemblerFactory.addDisassembler("mipsel", new MIPSDisasm())
+	def register = 0
+}
+
+class MIPSDisasm extends Disassembler {
+
+	import MIPSDisasm.{resolveOp, instrToString}
+
+
 	def disassemble(program : Array[Byte]) : Array[Instr] = {
 		val r = new Array[Instr](program.length/4)
 		for(i <- 0 until program.length/4) {
@@ -191,48 +247,6 @@ class MIPSDisasm extends Disassembler {
 		r
 	}
 	
-	def instrToString(ins : MIPSInstr) : String = {
-		if(ins.isInstanceOf[R]) {
-			val rop = resolveOp(ins.op, ins.asInstanceOf[R].funct)
-			val r = ins.asInstanceOf[R]
-			StringFmt.pad(rop.name, 8) + "rs = " + registers(r.rs) + ", rt = " + registers(r.rt) + ", rd = " + registers(r.rd)
-		} else {
-			val rop = resolveOp(ins.op, 0)
-			if(ins.isInstanceOf[J]) { 
-				StringFmt.pad(rop.name, 8) + String.format("0x%x", new Integer(ins.asInstanceOf[J].tgt))
-			} else {
-				val i = ins.asInstanceOf[I]
-				StringFmt.pad(rop.name, 8) + "rs = " + registers(i.rs) + ", rt = " + registers(i.rt) + ", imm = " + i.imm 
-			}
-		}
-			
-	}
-	
-	def makeR(name : String, desc : String, format : String) : InstructionDescription = {
-		val fmt = format.replace(" ", "")
-		val op = fmt.substring(0, 6)
-//		val rs = fmt.substring(6, 11)
-//		val rt = fmt.substring(11,16)
-//		val rd = fmt.substring(16, 21)
-//		val shamt = fmt.substring(21, 26)
-		val funct = fmt.substring(26, 32) 
-		new InstructionDescription(toBin(op).toByte, toBin(funct).toByte, InstructionDescription.R, name, desc)
-	}
-	
-	def makeI(name : String, desc : String, format : String) : InstructionDescription = {
-		val fmt = format.replace(" ", "")
-		val op = fmt.substring(0, 6)
-//		val rs = fmt.substring(7,11)
-//		val rt = fmt.substring(12,16)
-//		val imm = fmt.substring(16, 32) 
-		new InstructionDescription(toBin(op).toByte, 0.toByte, InstructionDescription.I, name, desc)
-	}
-	
-	def makeJ(name : String, desc : String, format : String) : InstructionDescription = {
-		val op = format.substring(0, 6)
-//		val tgt = format.substring(7, 32) 
-		new InstructionDescription(toBin(op).toByte, 0.toByte, InstructionDescription.J, name, desc)
-	}
 	
 	def toDisplayString(i : Instr) = instrToString(i.asInstanceOf[MIPSInstr])
 }
