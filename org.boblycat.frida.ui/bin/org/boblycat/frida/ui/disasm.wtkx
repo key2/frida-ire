@@ -1,0 +1,15 @@
+<TableView wtkx:id="disasmTable"
+           xmlns:wtkx="http://pivot.apache.org/wtkx"
+           xmlns="org.apache.pivot.wtk">
+    <columns>
+        <TableView.Column name="address"  width="100" headerData="Address"/>
+        <TableView.Column name="instr"    width="60" headerData="Instr"/>
+        <TableView.Column name="args"     width="260" headerData="Args"/>
+        <TableView.Column name="comment"  width="100" headerData="Comment"/>
+    </columns>
+    <tableData xmlns="org.apache.pivot.collections">
+        <ArrayList>
+            <HashMap address="04000000" instr="MOV" args="EAX,EBX" bronze="; boop"/>
+        </ArrayList>
+    </tableData>
+</TableView>

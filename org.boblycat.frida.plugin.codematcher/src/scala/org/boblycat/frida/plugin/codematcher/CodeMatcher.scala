@@ -31,7 +31,7 @@ class CodeChunk(val instrs : Array[Instr], var pos : Int = 0) {
 }
 
 class InstrPattern(val name : String) {
-	def matches(ins : Instr) : Boolean = name.equals(ins.name)
+	def matches(ins : Instr) : Boolean = name.equals(ins.instruction)
 	override def toString = name
 }
 

@@ -8,7 +8,10 @@ import org.boblycat.frida.core.PrintUtils
 class I(
 		val id : InstructionDescriptor
 		) extends Instr {
-	def name = id.name 
+	def instruction = id.name
+  def args = "<args>"
+  def address = 0
+  def comment = ""
 }
 		
 class InstructionDescriptor(

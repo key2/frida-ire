@@ -1,0 +1,13 @@
+<TablePane
+        wtkx:id="toolBar" styles="{verticalSpacing:2}">
+    <columns>
+        <TablePane.Column width="1*"/>
+    </columns>
+    <rows>
+        <TablePane.Row height="-1">
+            <BoxPane styles="{fill:true}">
+                <PushButton buttonData="1" icon="@edit-clear.png" styles="{toolbar:true}"/>
+            </BoxPane>
+        </TablePane.Row>
+    </rows>
+</TablePane>

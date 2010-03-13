@@ -1,0 +1,9 @@
+<BoxPane orientation="vertical" styles="{padding:4}"
+    xmlns:wtkx="http://pivot.apache.org/wtkx"
+    xmlns="org.apache.pivot.wtk">
+    <Label wtkx:id="archLabel" text="Architecture"/>
+    <TextInput wtkx:id="archText" text="abcd"/>
+    <Label wtkx:id="subarchLabel" text="Subarchitecture"/>
+    <TextInput wtkx:id="subarchText" text="1234"/>
+    <PushButton wtkx:id="saveButton" buttonData="Save"/>
+</BoxPane> 
