@@ -1,9 +1,9 @@
-package org.boblycat.frida.plugins.elfloader;
+package org.boblycat.frida.plugin.loader.elf;
+
+import org.boblycat.frida.plugin.loader.elf.ELFHeader;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 
 /**
  * Created: Mar 19, 2010

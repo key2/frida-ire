@@ -1,6 +1,6 @@
-package org.boblycat.frida.plugins.elfloader;
+package org.boblycat.frida.plugin.loader.elf;
 
-import org.boblycat.frida.plugins.elfloader.types.*;
+import org.boblycat.frida.plugin.loader.elf.types.*;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -1,4 +1,4 @@
-package org.boblycat.frida.plugins.elfloader.types;
+package org.boblycat.frida.plugin.loader.elf.types;
 
 /**
  * Created: Mar 19, 2010

@@ -1,4 +1,4 @@
-package org.boblycat.frida.plugins.elfloader.types;
+package org.boblycat.frida.plugin.loader.elf.types;
 
 /**
  * Created: Mar 19, 2010
@@ -9,10 +9,9 @@ package org.boblycat.frida.plugins.elfloader.types;
  *
  * @author: karltk@boblycat.org
  */
-public class E32Off {
-    public final int value;
-
-    public E32Off(int value) {
-        this.value = value;
+public class UChar {
+    final byte value;
+    public UChar(byte value) {
+       this.value = value;
     }
 }
