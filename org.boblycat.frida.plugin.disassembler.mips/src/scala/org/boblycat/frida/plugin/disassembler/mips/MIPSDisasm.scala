@@ -3,6 +3,7 @@ package org.boblycat.frida.plugin.disassembler.mips;
 import org.boblycat.frida.core.disassembler.Disassembler
 import org.boblycat.frida.core.disassembler.Instr
 import org.boblycat.frida.core.disassembler.DisassemblerFactory
+import org.boblycat.frida.core.CodeChunk
 
 object InstructionDescription {
 	val R = 1
@@ -222,7 +223,7 @@ class MIPSDisasm extends Disassembler {
 	import MIPSDisasm.{resolveOp, instrToString}
 
 
-	def disassemble(program : Array[Byte]) : Array[Instr] = {
+	override def disassemble(baseAddress : Long, program : Array[Byte]) : CodeChunk = {
 		val r = new Array[Instr](program.length/4)
 		for(i <- 0 until program.length/4) {
 			val pc = i * 4
@@ -262,7 +263,7 @@ class MIPSDisasm extends Disassembler {
 //					new java.lang.`Byte`(program(pc+3))))
 //			Console.println("op = " + asBinStr(op) + ", funct = " + funct.toBinaryString + ", shamt = " + shamt.toBinaryString + " | " + rop)
 		}
-		r
+		new CodeChunk(baseAddress, r)
 	}
 	
 	

@@ -1,9 +1,8 @@
 package org.boblycat.frida.plugin.disassembler.arm
 
-import org.boblycat.frida.core.FridaException
 import org.boblycat.frida.core.disassembler.Instr
 import org.boblycat.frida.core.disassembler.Disassembler
-import org.boblycat.frida.core.PrintUtils
+import org.boblycat.frida.core.{CodeChunk, FridaException, PrintUtils}
 
 class I(
 		val id : InstructionDescriptor
@@ -169,7 +168,7 @@ class ARMDisasm extends Disassembler {
 		throw new FridaException("Unknown opcode " + PrintUtils.toBinaryString(bits))
 	}
 	
-	def disassemble(program : Array[Byte]) : Array[Instr] = {
+	override def disassemble(baseAddress : Long, program : Array[Byte]) : CodeChunk = {
 		val r = new Array[Instr](program.length/2)
 		for(pc <- 0 until program.length/2) {
 			val bits = ((program(pc*2).toInt & 0xFF) | ((program(pc*2 + 1).toInt << 8) & 0xFF00)).toShort
@@ -179,7 +178,7 @@ class ARMDisasm extends Disassembler {
 					PrintUtils.toBinaryString(bits))
 			r(pc) = resolveOp(bits.toShort)
 		}
-		r
+		new CodeChunk(baseAddress, r)
 	}
 	
 	def toDisplayString(ins : Instr) = instrToString(ins.asInstanceOf[ARMInstr])

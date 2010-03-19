@@ -16,6 +16,7 @@ import org.apache.pivot.collections.*;
 import org.apache.pivot.serialization.SerializationException;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtkx.WTKXSerializer;
+import org.boblycat.frida.core.CodeChunk;
 import org.boblycat.frida.core.disassembler.Disassembler;
 import org.boblycat.frida.core.disassembler.DisassemblerFactory;
 import org.boblycat.frida.core.disassembler.Instr;
@@ -25,7 +26,7 @@ public class FridaApp implements Application {
 
     private Window window = null;
     private TabPane tabPane = null;
-    private FileBrowserSheet fileBrowserSheet = null;
+    //private FileBrowserSheet fileBrowserSheet = null;
 
     static class BinaryBlob {
         final byte[] blobData;
@@ -72,7 +73,7 @@ public class FridaApp implements Application {
                 }
             }
         });
-        fileBrowserSheet = new FileBrowserSheet(FileBrowserSheet.Mode.OPEN);
+        //fileBrowserSheet = new FileBrowserSheet(FileBrowserSheet.Mode.OPEN);
 
         window.open(display);
     }
@@ -134,8 +135,8 @@ public class FridaApp implements Application {
 
             MIPSDisasm.register();
 		    Disassembler dis = DisassemblerFactory.create("mipsel");
-		    Instr[] res = dis.disassemble(blob.blobData);
-            List<Map<String,String>> ls = new ArrayList<Map<String,String>>(res.length);
+		    CodeChunk res = dis.disassemble(0, blob.blobData);
+            List<Map<String,String>> ls = new ArrayList<Map<String,String>>(res.length());
             for(Instr ins : res) {
                 Map<String,String> m = new HashMap<String,String>();
                 m.put("address", String.format("0x%x", ins.address()));
@@ -145,7 +146,7 @@ public class FridaApp implements Application {
                 ls.add(m);
             }
             disasmTable.setTableData(ls);
-            tab = new Border(disasmTable);
+            tab = new Border(disasmTable);                  
         } catch (IOException exception) {
             throw new RuntimeException(exception);
         } catch (SerializationException exception) {
@@ -225,7 +226,7 @@ public class FridaApp implements Application {
         Action.getNamedActions().put("fileOpen", new Action() {
             @Override
             public void perform() {
-                fileBrowserSheet.open(window);
+                //fileBrowserSheet.open(window);
             }
         });
 

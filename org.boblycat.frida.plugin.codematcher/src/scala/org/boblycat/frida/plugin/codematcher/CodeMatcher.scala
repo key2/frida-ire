@@ -13,6 +13,7 @@ class CodeMatch(val seqs : List[Array[Int]]) {
 	}
 }
 
+
 class CodeChunk(val instrs : Array[Instr], var pos : Int = 0) {
 	def next : Instr = {
 		if(pos >= instrs.length)
@@ -29,6 +30,7 @@ class CodeChunk(val instrs : Array[Instr], var pos : Int = 0) {
 	def here = pos
 	def there(newPos : Int) = { pos = newPos }
 }
+
 
 class InstrPattern(val name : String) {
 	def matches(ins : Instr) : Boolean = name.equals(ins.instruction)

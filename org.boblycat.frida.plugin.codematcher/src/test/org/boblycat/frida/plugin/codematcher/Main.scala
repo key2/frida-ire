@@ -1,6 +1,6 @@
 package org.boblycat.frida.plugin.codematcher;
 
-import org.boblycat.frida.plugin.disassembler.mips.MIPSDisasm
+import scala.collection.JavaConversions._
 import org.boblycat.frida.core.disassembler.DisassemblerFactory
 
 object Main {
@@ -10,8 +10,8 @@ object Main {
 	def main(args : Array[String]) {
 		org.boblycat.frida.plugin.disassembler.mips.MIPSDisasm.register
 		val dis = DisassemblerFactory.create("mipsel");
-		val instrs = dis.disassemble("data/mipsel-example.bin") 
-		for(i <- instrs) {
+		val code = dis.disassemble(0, "data/mipsel-example.bin") 
+		for(i <- code) {
 			println(i);
 		}
 		
@@ -19,7 +19,7 @@ object Main {
 		
 		val pat = pattern.oneOrMore(skip).instr("ADDIU").instr("ADDIU").instr("ADDIU").stop;
 		println(pat)
-		for(m <- pat matches chunk(instrs)) 
+		for(m <- pat matches chunk(code.getInstructions)) 
 			println(m.map(_.toString).reduceLeft(_ + ", " + _)) 
 	}
 }
