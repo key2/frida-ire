@@ -1,7 +1,5 @@
 package org.boblycat.frida.plugin.loader.elf;
 
-import org.boblycat.frida.plugin.loader.elf.ELFHeader;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 
@@ -17,8 +15,8 @@ import java.io.IOException;
 public class TestELFHeader {
 
     public static void main(String[] args) throws IOException {
-        ELFHeader hdr = ELFHeader.loadFromStream(new FileInputStream("test.elf"));
-        hdr.dump();
+        ELFFile elf = ELFFile.loadFromStream(new FileInputStream("/home/karltk/ole/test.elf"));
+        elf.dump();
 
     }
 }

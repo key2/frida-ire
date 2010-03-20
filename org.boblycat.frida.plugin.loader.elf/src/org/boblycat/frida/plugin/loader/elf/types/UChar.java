@@ -10,7 +10,7 @@ package org.boblycat.frida.plugin.loader.elf.types;
  * @author: karltk@boblycat.org
  */
 public class UChar {
-    final byte value;
+    public final byte value;
     public UChar(byte value) {
        this.value = value;
     }
