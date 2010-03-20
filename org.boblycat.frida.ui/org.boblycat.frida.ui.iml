@@ -28,8 +28,8 @@
     <orderEntry type="jdk" jdkName="1.6" jdkType="JavaSDK" />
     <orderEntry type="library" name="scala-2.8.0-beta1" level="application" />
     <orderEntry type="library" name="pivot-1.4" level="application" />
-    <orderEntry type="module" module-name="org.boblycat.frida.core" />
     <orderEntry type="module" module-name="org.boblycat.frida.plugin.disassembler.mips" />
+    <orderEntry type="module" module-name="org.boblycat.frida.core" />
   </component>
 </module>
 

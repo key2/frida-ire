@@ -1,9 +1,7 @@
 package org.boblycat.frida.plugin.disassembler.mips;
 
-import org.boblycat.frida.core.disassembler.Disassembler
-import org.boblycat.frida.core.disassembler.Instr
-import org.boblycat.frida.core.disassembler.DisassemblerFactory
 import org.boblycat.frida.core.CodeChunk
+import org.boblycat.frida.core.disassembler.{JumpInstr, Disassembler, Instr, DisassemblerFactory}
 
 object InstructionDescription {
 	val R = 1
@@ -24,23 +22,24 @@ object StringFmt {
 }
 
 abstract class MIPSInstr(
-   val address : Int,
-   val op : Byte // 6 bits
-	) extends Instr { 
-	override def toString = MIPSDisasm.instrToString(this)
-	override def instruction = MIPSDisasm.instrName(op)
+        val address : Long,
+        val op : Byte // 6 bits
+        ) extends Instr {
+  override def toString = MIPSDisasm.instrToString(this)
+  override def instruction = MIPSDisasm.instrName(op)
   override def comment = ""
 }
 
 class R(
-      addr : Int,
-	    op : Byte, // 6 bits
-	val rs : Byte, // 5 bits
-	val rt : Byte, // 5 bits
-	val rd : Byte, // 5 bits
-	val shamt : Byte, // 5 bits
-	val funct : Byte) // 6 bits
-	extends MIPSInstr(addr, op) {
+        addr : Long,
+        op : Byte,        // 6 bits
+        val rs : Byte,    // 5 bits
+        val rt : Byte,    // 5 bits
+        val rd : Byte,    // 5 bits
+        val shamt : Byte, // 5 bits
+        val funct : Byte  // 6 bits
+        )
+        extends MIPSInstr(addr, op) {
   override def args =
     "rs = " + MIPSDisasm.registers(rs) +
             ", rt = " + MIPSDisasm.registers(rt) +
@@ -48,7 +47,7 @@ class R(
 }
 
 class I (
-    addr : Int,
+    addr : Long,
 	    op : Byte, // 6 bits
 	val rs : Byte, // 5 bits
 	val rt : Byte, // 5 bits
@@ -61,11 +60,13 @@ class I (
 }
 
 class J(
-  addr : Int,
-		op : Byte, // 6 bits
-    val tgt : Int) // 26 bits
-    extends MIPSInstr(addr, op) {
-   override def args = String.format("0x%x", new java.lang.Integer(tgt))
+        addr : Long,
+        op : Byte,    // 6 bits
+        val tgt : Int // 26 bits
+        )
+        extends MIPSInstr(addr, op) with JumpInstr {
+  override def args = String.format("0x%x", new java.lang.Integer(tgt))
+  override def getDestination = tgt
 }
 
 
@@ -188,14 +189,14 @@ object MIPSDisasm {
 		if(ins.isInstanceOf[R]) {
 			val rop = resolveOp(ins.op, ins.asInstanceOf[R].funct)
 			val r = ins.asInstanceOf[R]
-			StringFmt.pad(rop.name, 8) + "rs = " + registers(r.rs) + ", rt = " + registers(r.rt) + ", rd = " + registers(r.rd)
+			String.format("0x%08x: ", new java.lang.Long(ins.address)) + StringFmt.pad(rop.name, 8) + "rs = " + registers(r.rs) + ", rt = " + registers(r.rt) + ", rd = " + registers(r.rd)
 		} else {
 			val rop = resolveOp(ins.op, 0)
 			if(ins.isInstanceOf[J]) { 
-				StringFmt.pad(rop.name, 8) + String.format("0x%x", new java.lang.Integer(ins.asInstanceOf[J].tgt))
+				String.format("0x%08x: ", new java.lang.Long(ins.address)) + StringFmt.pad(rop.name, 8) + String.format("0x%08x", new java.lang.Integer(ins.asInstanceOf[J].tgt))
 			} else {
 				val i = ins.asInstanceOf[I]
-				StringFmt.pad(rop.name, 8) + "rs = " + registers(i.rs) + ", rt = " + registers(i.rt) + ", imm = " + i.imm 
+				String.format("0x%08x: ", new java.lang.Long(ins.address)) + StringFmt.pad(rop.name, 8) + "rs = " + registers(i.rs) + ", rt = " + registers(i.rt) + ", imm = " + i.imm
 			}
 		}
 			
@@ -237,20 +238,20 @@ class MIPSDisasm extends Disassembler {
 					val rs = (program(pc+3) & 3) | (program(pc+2) & (7 << 5)) >> 5
 					val rt = program(pc+2) & 31
 					val rd = (program(pc+1) & (31 << 3)) >> 3
-					r(i) = new R(pc, op.toByte, rs.toByte, rt.toByte, rd.toByte, shamt.toByte, funct.toByte)
+					r(i) = new R(baseAddress + pc, op.toByte, rs.toByte, rt.toByte, rd.toByte, shamt.toByte, funct.toByte)
 				}
 				case InstructionDescription.I => {
 					val rs = ((program(pc+3) & 3) << 3) | (program(pc+2) & (7 << 5)) >> 5
 					val rt = program(pc+2) & 31
 					val imm = program(pc+1) << 8 | program(pc)
-					r(i) = new I(pc, op.toByte, rs.toByte, rt.toByte, imm)
+					r(i) = new I(baseAddress + pc, op.toByte, rs.toByte, rt.toByte, imm)
 				}
 				case InstructionDescription.J => { 
 					val imm = ((program(pc+3) & 3) << 24) | 
 					((program(pc+2) << 16) & 0x00FF0000) | 
 					((program(pc+1) << 8) & 0x0000FF00) | 
 					(program(pc) & 0x000000FF)
-					r(i) = new J(pc, op.toByte, imm)
+					r(i) = new J(baseAddress + pc, op.toByte, imm << 2)
 	//			Console.println(pad(rop.name, 8) + " s=" + registers(rs) + ", t=" + registers(rt) + ", d=" + registers(rd))
 //					Console.println(pad(rop.name, 8) + " t=" + registers(rt) + ", s=" + registers(rs) + ", imm=" + String.format("0x%x", new Integer(imm)))
 	//			Console.println(pad(rop.name, 8) + " " + String.format("0x%x", new Integer(imm.toInt)))

@@ -47,4 +47,8 @@ public class CodeChunk implements Iterable<Instr> {
             }
         };
     }
+
+    public long getOffset(int index) {
+        return instructions[index].address();
+    }
 }
