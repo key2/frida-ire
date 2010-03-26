@@ -7,6 +7,7 @@ object InstructionDescription {
 	val R = 1
 	val I = 2
 	val J = 3
+  val X = 99
 }
 
 class InstructionDescription(
@@ -69,6 +70,9 @@ class J(
   override def getDestination = tgt
 }
 
+class X(addr : Long, op : Byte) extends MIPSInstr(addr, op) {
+  override def args = ""
+}
 
 object MIPSDisasm {
 		val registers = Map[Int,String](
@@ -176,7 +180,11 @@ object MIPSDisasm {
 //		val imm = fmt.substring(16, 32) 
 		new InstructionDescription(toBin(op).toByte, 0.toByte, InstructionDescription.I, name, desc)
 	}
-	
+
+  def makeX(op : Byte) : InstructionDescription = {
+    new InstructionDescription(op, 0.toByte, InstructionDescription.X, "invalid", "invalid opcode")
+  }
+
 	def makeJ(name : String, desc : String, format : String) : InstructionDescription = {
 		val op = format.substring(0, 6)
 //		val tgt = format.substring(7, 32) 
@@ -186,20 +194,21 @@ object MIPSDisasm {
 	def instrName(op : Byte) : String = resolveOp(op, 0).name
 	
 		def instrToString(ins : MIPSInstr) : String = {
-		if(ins.isInstanceOf[R]) {
-			val rop = resolveOp(ins.op, ins.asInstanceOf[R].funct)
-			val r = ins.asInstanceOf[R]
-			String.format("0x%08x: ", new java.lang.Long(ins.address)) + StringFmt.pad(rop.name, 8) + "rs = " + registers(r.rs) + ", rt = " + registers(r.rt) + ", rd = " + registers(r.rd)
-		} else {
-			val rop = resolveOp(ins.op, 0)
-			if(ins.isInstanceOf[J]) { 
-				String.format("0x%08x: ", new java.lang.Long(ins.address)) + StringFmt.pad(rop.name, 8) + String.format("0x%08x", new java.lang.Integer(ins.asInstanceOf[J].tgt))
-			} else {
-				val i = ins.asInstanceOf[I]
-				String.format("0x%08x: ", new java.lang.Long(ins.address)) + StringFmt.pad(rop.name, 8) + "rs = " + registers(i.rs) + ", rt = " + registers(i.rt) + ", imm = " + i.imm
-			}
-		}
-			
+      if(ins.isInstanceOf[X]) {
+        "invalid opcode"
+      } else if(ins.isInstanceOf[R]) {
+        val rop = resolveOp(ins.op, ins.asInstanceOf[R].funct)
+        val r = ins.asInstanceOf[R]
+        String.format("0x%08x: ", new java.lang.Long(ins.address)) + StringFmt.pad(rop.name, 8) + "rs = " + registers(r.rs) + ", rt = " + registers(r.rt) + ", rd = " + registers(r.rd)
+      } else {
+        val rop = resolveOp(ins.op, 0)
+        if(ins.isInstanceOf[J]) {
+          String.format("0x%08x: ", new java.lang.Long(ins.address)) + StringFmt.pad(rop.name, 8) + String.format("0x%08x", new java.lang.Integer(ins.asInstanceOf[J].tgt))
+        } else {
+          val i = ins.asInstanceOf[I]
+          String.format("0x%08x: ", new java.lang.Long(ins.address)) + StringFmt.pad(rop.name, 8) + "rs = " + registers(i.rs) + ", rt = " + registers(i.rt) + ", imm = " + i.imm
+        }
+      }
 	}
 
 	def resolveOp(op : Byte, funct : Byte) : InstructionDescription = {
@@ -211,7 +220,7 @@ object MIPSDisasm {
 						return i
 				}
 		}
-		throw new RuntimeException("Unknown instruction : " + op)
+    return makeX(op)
 	}
 	
 
@@ -255,7 +264,10 @@ class MIPSDisasm extends Disassembler {
 	//			Console.println(pad(rop.name, 8) + " s=" + registers(rs) + ", t=" + registers(rt) + ", d=" + registers(rd))
 //					Console.println(pad(rop.name, 8) + " t=" + registers(rt) + ", s=" + registers(rs) + ", imm=" + String.format("0x%x", new Integer(imm)))
 	//			Console.println(pad(rop.name, 8) + " " + String.format("0x%x", new Integer(imm.toInt)))
-				}
+        }
+        case InstructionDescription.X => {
+          r(i) = new X(baseAddress + pc, op.toByte)
+        }
 			}
 //			Console.println("i = " + String.format("%02x%02x%02x%02x", 
 //					new java.lang.`Byte`(program(pc)),
