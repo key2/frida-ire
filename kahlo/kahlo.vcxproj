@@ -239,7 +239,8 @@ echo &gt; "$(ProjectDir)ext\sdkurl.stamp"</Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\*.c" />
+    <ClCompile Include="src\kahlo.c" />
+    <ClCompile Include="src\winmain.c" />
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\kahlo.vala">

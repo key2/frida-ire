@@ -16,6 +16,9 @@
     <Filter Include="Resource Files\ext">
       <UniqueIdentifier>{48356fdf-ece9-4143-bd4a-50ee541424c1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\generated">
+      <UniqueIdentifier>{19b10746-5733-4a2b-b36a-1295466e495f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="src\kahlo.vala">
@@ -26,13 +29,11 @@
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\kahlo.c">
+    <ClCompile Include="src\winmain.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\winmain.c" />
     <ClCompile Include="src\kahlo.c">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\generated</Filter>
     </ClCompile>
-    <ClCompile Include="src\winmain.c" />
   </ItemGroup>
 </Project>
