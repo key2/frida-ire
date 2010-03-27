@@ -3,8 +3,18 @@ syntax: glob
 .scala_dependencies
 bin/.keep
 *~
+*.sdf
+*.suo
+*.user
+*.stamp
 
 syntax: regexp
 \.bin$
 syntax: regexp
 \.class$
+
+syntax: glob
+./kahlo/bin
+./kahlo/ext/sdk
+./kahlo/obj
+./kahlo/src/kahlo.c
