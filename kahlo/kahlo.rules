@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<VisualStudioToolFile
+	Name="Kahlo Rules"
+	Version="8.00"
+	>
+	<Rules>
+		<CustomBuildRule
+			Name="FridaValaCompilerTool"
+			DisplayName="Frida Vala Compiler Tool"
+			CommandLine="&quot;$(SolutionDir)ext\sdk\vala\valac.exe&quot; [inputs] --ccode --basedir=&quot;.\src&quot; --directory=$(IntDir) --vapidir=&quot;$(ProjectDir)ext\sdk\vala\vapi&quot; [Packages] || exit 1&#x0D;&#x0A;echo &gt; &quot;$(IntDir)$(InputName).stamp&quot;"
+			Outputs="$(IntDir)$(InputName).stamp"
+			AdditionalDependencies="$(SolutionDir)ext\sdk\vala\valac.exe"
+			FileExtensions="*.vala"
+			ExecutionDescription="Compiling Vala code"
+			SupportsFileBatching="true"
+			>
+			<Properties>
+				<StringProperty
+					Name="Packages"
+					DisplayName="Packages"
+					Description="Include binding for specified packages."
+					Switch="--pkg=[value]"
+					Delimited="true"
+				/>
+			</Properties>
+		</CustomBuildRule>
+	</Rules>
+</VisualStudioToolFile>
