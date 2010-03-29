@@ -5,6 +5,7 @@ bin/.keep
 *~
 *.ncb
 *.suo
+*.swp
 *.user
 
 syntax: regexp
