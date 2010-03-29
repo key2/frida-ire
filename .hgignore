@@ -13,6 +13,6 @@ syntax: regexp
 \.class$
 
 syntax: glob
-./kahlo/bin
-./kahlo/ext/sdk
-./kahlo/obj
+./zed/bin
+./zed/ext/sdk
+./zed/obj

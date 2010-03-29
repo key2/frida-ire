@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="kahlo"
+	Name="zed"
 	ProjectGUID="{B7DC9B02-A5FF-4AA1-B2A2-DC1653168D44}"
-	RootNamespace="kahlo"
+	RootNamespace="zed"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="196613"
 	>
@@ -17,9 +17,6 @@
 		/>
 	</Platforms>
 	<ToolFiles>
-		<ToolFile
-			RelativePath=".\kahlo.rules"
-		/>
 	</ToolFiles>
 	<Configurations>
 		<Configuration
@@ -34,10 +31,6 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="FridaValaCompilerTool"
-				Packages="gtk+-2.0"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -58,6 +51,7 @@
 				RuntimeLibrary="1"
 				WarningLevel="4"
 				DebugInformationFormat="4"
+				DisableSpecificWarnings="4100;4127"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -114,10 +108,6 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="FridaValaCompilerTool"
-				Packages="gtk+-2.0"
-			/>
-			<Tool
 				Name="VCXMLDataGeneratorTool"
 			/>
 			<Tool
@@ -137,6 +127,7 @@
 				RuntimeLibrary="1"
 				WarningLevel="4"
 				DebugInformationFormat="3"
+				DisableSpecificWarnings="4100;4127"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -194,10 +185,6 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="FridaValaCompilerTool"
-				Packages="gtk+-2.0"
-			/>
-			<Tool
 				Name="VCXMLDataGeneratorTool"
 			/>
 			<Tool
@@ -208,10 +195,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="1"
+				Optimization="2"
 				FavorSizeOrSpeed="2"
+				OmitFramePointers="true"
 				AdditionalIncludeDirectories="$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\lib\gtk-2.0\include;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include\gtk-2.0;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include\atk-1.0;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include\pango-1.0;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include\cairo;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\lib\glib-2.0\include;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include\glib-2.0;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;G_DISABLE_ASSERT;G_DISABLE_CAST_CHECKS;G_DISABLE_CHECKS"
 				StringPooling="true"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
@@ -221,6 +209,7 @@
 				WarningLevel="4"
 				DebugInformationFormat="3"
 				CompileAs="0"
+				DisableSpecificWarnings="4100;4127"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -241,6 +230,7 @@
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				RandomizedBaseAddress="1"
+				FixedBaseAddress="2"
 				ImportLibrary="$(IntDir)$(ProjectName).lib"
 				TargetMachine="1"
 			/>
@@ -281,10 +271,6 @@
 				Name="VCCustomBuildTool"
 			/>
 			<Tool
-				Name="FridaValaCompilerTool"
-				Packages="gtk+-2.0"
-			/>
-			<Tool
 				Name="VCXMLDataGeneratorTool"
 			/>
 			<Tool
@@ -296,10 +282,11 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="1"
+				Optimization="2"
 				FavorSizeOrSpeed="2"
+				OmitFramePointers="true"
 				AdditionalIncludeDirectories="$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\lib\gtk-2.0\include;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include\gtk-2.0;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include\atk-1.0;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include\pango-1.0;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include\cairo;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\lib\glib-2.0\include;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include\glib-2.0;$(SolutionDir)ext\sdk\$(PlatformName)-$(ConfigurationName)\include"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;G_DISABLE_ASSERT;G_DISABLE_CAST_CHECKS;G_DISABLE_CHECKS"
 				StringPooling="true"
 				ExceptionHandling="0"
 				RuntimeLibrary="0"
@@ -309,6 +296,7 @@
 				WarningLevel="4"
 				DebugInformationFormat="3"
 				CompileAs="0"
+				DisableSpecificWarnings="4100;4127"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -329,6 +317,7 @@
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
 				RandomizedBaseAddress="1"
+				FixedBaseAddress="2"
 				ImportLibrary="$(IntDir)$(ProjectName).lib"
 				TargetMachine="17"
 			/>
@@ -364,18 +353,102 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\src\kahlo.vala"
+				RelativePath=".\src\winmain.c"
 				>
 			</File>
 			<File
-				RelativePath=".\src\winmain.c"
+				RelativePath=".\src\zed.vala"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Compiling vala code"
+						CommandLine="mkdir &quot;$(IntDir)\data&quot; 2&gt;NUL&#x0D;&#x0A;mkdir &quot;$(IntDir)\src\ui&quot; 2&gt;NUL&#x0D;&#x0A;&quot;$(SolutionDir)ext\sdk\vala\valac.exe&quot; data/login.vala src/zed.vala src/ui/root.vala src/ui/login.vala src/ui/workspace.vala --ccode --directory=$(IntDir) --vapidir=&quot;$(SolutionDir)ext\sdk\vala\vapi&quot; --pkg=gtk+-2.0 || exit 1&#x0D;&#x0A;echo &gt; &quot;$(IntDir)valacode.stamp&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)data\login.vala;$(ProjectDir)src\ui\login.vala;$(ProjectDir)src\ui\root.vala;$(ProjectDir)src\ui\workspace.vala"
+						Outputs="$(IntDir)valacode.stamp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Debug|x64"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Compiling vala code"
+						CommandLine="mkdir &quot;$(IntDir)\data&quot; 2&gt;NUL&#x0D;&#x0A;mkdir &quot;$(IntDir)\src\ui&quot; 2&gt;NUL&#x0D;&#x0A;&quot;$(SolutionDir)ext\sdk\vala\valac.exe&quot; data/login.vala src/zed.vala src/ui/root.vala src/ui/login.vala src/ui/workspace.vala --ccode --directory=$(IntDir) --vapidir=&quot;$(SolutionDir)ext\sdk\vala\vapi&quot; --pkg=gtk+-2.0 || exit 1&#x0D;&#x0A;echo &gt; &quot;$(IntDir)valacode.stamp&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)data\login.vala;$(ProjectDir)src\ui\login.vala;$(ProjectDir)src\ui\root.vala;$(ProjectDir)src\ui\workspace.vala"
+						Outputs="$(IntDir)valacode.stamp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|Win32"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Compiling vala code"
+						CommandLine="mkdir &quot;$(IntDir)\data&quot; 2&gt;NUL&#x0D;&#x0A;mkdir &quot;$(IntDir)\src\ui&quot; 2&gt;NUL&#x0D;&#x0A;&quot;$(SolutionDir)ext\sdk\vala\valac.exe&quot; data/login.vala src/zed.vala src/ui/root.vala src/ui/login.vala src/ui/workspace.vala --ccode --directory=$(IntDir) --vapidir=&quot;$(SolutionDir)ext\sdk\vala\vapi&quot; --pkg=gtk+-2.0 || exit 1&#x0D;&#x0A;echo &gt; &quot;$(IntDir)valacode.stamp&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)data\login.vala;$(ProjectDir)src\ui\login.vala;$(ProjectDir)src\ui\root.vala;$(ProjectDir)src\ui\workspace.vala"
+						Outputs="$(IntDir)valacode.stamp"
+					/>
+				</FileConfiguration>
+				<FileConfiguration
+					Name="Release|x64"
+					>
+					<Tool
+						Name="VCCustomBuildTool"
+						Description="Compiling vala code"
+						CommandLine="mkdir &quot;$(IntDir)\data&quot; 2&gt;NUL&#x0D;&#x0A;mkdir &quot;$(IntDir)\src\ui&quot; 2&gt;NUL&#x0D;&#x0A;&quot;$(SolutionDir)ext\sdk\vala\valac.exe&quot; data/login.vala src/zed.vala src/ui/root.vala src/ui/login.vala src/ui/workspace.vala --ccode --directory=$(IntDir) --vapidir=&quot;$(SolutionDir)ext\sdk\vala\vapi&quot; --pkg=gtk+-2.0 || exit 1&#x0D;&#x0A;echo &gt; &quot;$(IntDir)valacode.stamp&quot;&#x0D;&#x0A;"
+						AdditionalDependencies="$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)data\login.vala;$(ProjectDir)src\ui\login.vala;$(ProjectDir)src\ui\root.vala;$(ProjectDir)src\ui\workspace.vala"
+						Outputs="$(IntDir)valacode.stamp"
+					/>
+				</FileConfiguration>
 			</File>
 			<Filter
 				Name="generated"
 				>
 				<File
-					RelativePath="$(IntDir)kahlo.c"
+					RelativePath="$(IntDir)src\zed.c"
+					>
+				</File>
+				<Filter
+					Name="ui"
+					>
+					<File
+						RelativePath="$(IntDir)src\ui\login.c"
+						>
+					</File>
+					<File
+						RelativePath="$(IntDir)src\ui\root.c"
+						>
+					</File>
+					<File
+						RelativePath="$(IntDir)src\ui\workspace.c"
+						>
+					</File>
+				</Filter>
+			</Filter>
+			<Filter
+				Name="ui"
+				>
+				<File
+					RelativePath=".\src\ui\login.vala"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\root.vala"
+					>
+				</File>
+				<File
+					RelativePath=".\src\ui\workspace.vala"
+					>
+				</File>
+			</Filter>
+			<Filter
+				Name="data"
+				>
+				<File
+					RelativePath=".\data\login.vala"
 					>
 				</File>
 			</Filter>
