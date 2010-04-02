@@ -17,3 +17,5 @@ syntax: glob
 ./zed/bin
 ./zed/ext/sdk
 ./zed/obj
+./zed/tests/labrats/bin
+./zed/tests/labrats/obj
