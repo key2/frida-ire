@@ -3,6 +3,7 @@ syntax: glob
 .scala_dependencies
 bin/.keep
 *~
+*.idc
 *.ncb
 *.suo
 *.swp
