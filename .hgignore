@@ -4,6 +4,7 @@ syntax: glob
 bin/.keep
 *~
 *.idc
+*.ipch
 *.opensdf
 *.sdf
 *.suo
