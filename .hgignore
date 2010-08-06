@@ -1,4 +1,5 @@
 syntax: glob
+.deps
 .metadata
 .scala_dependencies
 bin/.keep
@@ -6,8 +7,10 @@ bin/.keep
 *.cache
 *.idc
 *.ipch
+*.o
 *.opensdf
 *.sdf
+*.stamp
 *.suo
 *.swp
 *.user
@@ -20,6 +23,29 @@ syntax: regexp
 syntax: glob
 ./zed/bin
 ./zed/ext/sdk
+./zed/iphone/INSTALL
+./zed/iphone/Makefile
+./zed/iphone/Makefile.in
+./zed/iphone/README
+./zed/iphone/aclocal.m4
+./zed/iphone/build/armv7
+./zed/iphone/build/sdk
+./zed/iphone/build/toolchain
+./zed/iphone/config.h
+./zed/iphone/config.h.in
+./zed/iphone/config.log
+./zed/iphone/config.status
+./zed/iphone/configure
+./zed/iphone/depcomp
+./zed/iphone/install-sh
+./zed/iphone/missing
+./zed/iphone/src/*.c
+./zed/iphone/src/Makefile
+./zed/iphone/src/Makefile.in
+./zed/iphone/src/zid-server
+./zed/iphone/stamp-h1
+./zed/iphone/vapi/Makefile
+./zed/iphone/vapi/Makefile.in
 ./zed/obj
 ./zed/tests/labrats/bin
 ./zed/tests/labrats/obj
