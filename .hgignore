@@ -22,15 +22,19 @@ syntax: regexp
 
 syntax: glob
 ./zed/bin
+./zed/build/frida-ios
+./zed/build/frida-osx
+./zed/build/sdk-ios
+./zed/build/sdk-osx
+./zed/build/tmp-ios
+./zed/build/tmp-osx
+./zed/build/toolchain
 ./zed/ext/sdk
 ./zed/iphone/INSTALL
 ./zed/iphone/Makefile
 ./zed/iphone/Makefile.in
 ./zed/iphone/README
 ./zed/iphone/aclocal.m4
-./zed/iphone/build/armv7
-./zed/iphone/build/sdk
-./zed/iphone/build/toolchain
 ./zed/iphone/config.h
 ./zed/iphone/config.h.in
 ./zed/iphone/config.log
