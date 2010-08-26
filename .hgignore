@@ -62,8 +62,15 @@ syntax: glob
 ./zed/iphone/src/zid-server
 ./zed/iphone/src/zid-server.h
 ./zed/iphone/stamp-h1
+./zed/iphone/tests/.libs
+./zed/iphone/tests/*.la
+./zed/iphone/tests/*.lo
 ./zed/iphone/tests/Makefile
 ./zed/iphone/tests/Makefile.in
+./zed/iphone/tests/inject-attacker
+./zed/iphone/tests/inject-attacker.c
+./zed/iphone/tests/inject-victim
+./zed/iphone/tests/inject-victim.c
 ./zed/iphone/tests/process.c
 ./zed/iphone/tests/test-fruitjector.c
 ./zed/iphone/tests/test-main.c
