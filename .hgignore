@@ -47,6 +47,17 @@ syntax: glob
 ./zed/iphone/libtool
 ./zed/iphone/ltmain.sh
 ./zed/iphone/missing
+./zed/iphone/ext/Makefile
+./zed/iphone/ext/Makefile.in
+./zed/iphone/ext/interfaces/.libs
+./zed/iphone/ext/interfaces/*.la
+./zed/iphone/ext/interfaces/*.lo
+./zed/iphone/ext/interfaces/Makefile
+./zed/iphone/ext/interfaces/Makefile.in
+./zed/iphone/ext/interfaces/session.c
+./zed/iphone/ext/interfaces/session.vala
+./zed/iphone/ext/interfaces/zed-interfaces.h
+./zed/iphone/ext/interfaces/zed-interfaces.vapi
 ./zed/iphone/src/.libs
 ./zed/iphone/src/*.la
 ./zed/iphone/src/*.lo
@@ -55,8 +66,6 @@ syntax: glob
 ./zed/iphone/src/agent.c
 ./zed/iphone/src/fruitjector.c
 ./zed/iphone/src/server.c
-./zed/iphone/src/session.c
-./zed/iphone/src/session.vala
 ./zed/iphone/src/system.c
 ./zed/iphone/src/zid-core.h
 ./zed/iphone/src/zid-core.vapi
