@@ -43,6 +43,7 @@ syntax: glob
 ./zed/ext/libgum/config.sub
 ./zed/ext/libgum/configure
 ./zed/ext/libgum/depcomp
+./zed/ext/libgum/gum-1.0.pc
 ./zed/ext/libgum/install-sh
 ./zed/ext/libgum/libtool
 ./zed/ext/libgum/ltmain.sh
@@ -62,6 +63,8 @@ syntax: glob
 ./zed/ext/libgum/tests/core/*.lo
 ./zed/ext/libgum/tests/core/Makefile
 ./zed/ext/libgum/tests/core/Makefile.in
+./zed/ext/libgum/vapi/Makefile
+./zed/ext/libgum/vapi/Makefile.in
 ./zed/iphone/INSTALL
 ./zed/iphone/Makefile
 ./zed/iphone/Makefile.in
