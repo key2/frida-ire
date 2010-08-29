@@ -53,8 +53,10 @@ syntax: glob
 ./zed/ext/libgum/gum/*.la
 ./zed/ext/libgum/gum/Makefile
 ./zed/ext/libgum/gum/Makefile.in
+./zed/ext/libgum/tests/.libs
 ./zed/ext/libgum/tests/Makefile
 ./zed/ext/libgum/tests/Makefile.in
+./zed/ext/libgum/tests/gum-tests
 ./zed/ext/libgum/tests/core/.libs
 ./zed/ext/libgum/tests/core/*.la
 ./zed/ext/libgum/tests/core/*.lo
