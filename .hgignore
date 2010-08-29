@@ -68,7 +68,6 @@ syntax: glob
 ./zed/iphone/tests/Makefile
 ./zed/iphone/tests/Makefile.in
 ./zed/iphone/tests/inject-attacker
-./zed/iphone/tests/inject-attacker.c
 ./zed/iphone/tests/inject-victim
 ./zed/iphone/tests/inject-victim.c
 ./zed/iphone/tests/process.c
