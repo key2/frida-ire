@@ -52,6 +52,7 @@ syntax: glob
 ./zed/iphone/src/*.lo
 ./zed/iphone/src/Makefile
 ./zed/iphone/src/Makefile.in
+./zed/iphone/src/agent.c
 ./zed/iphone/src/fruitjector.c
 ./zed/iphone/src/server.c
 ./zed/iphone/src/session.c
