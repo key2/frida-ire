@@ -118,6 +118,7 @@ syntax: glob
 ./zed/ios/tests/process.c
 ./zed/ios/tests/test-fruitjector.c
 ./zed/ios/tests/test-main.c
+./zed/ios/tests/test-system.c
 ./zed/ios/tests/zid-tests
 ./zed/ios/tests/zid-tests.h
 ./zed/ios/vapi/Makefile
