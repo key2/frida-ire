@@ -103,6 +103,7 @@ syntax: glob
 ./zed/ios/src/Makefile.in
 ./zed/ios/src/agent.c
 ./zed/ios/src/fruitjector.c
+./zed/ios/src/script-engine.c
 ./zed/ios/src/server.c
 ./zed/ios/src/system.c
 ./zed/ios/src/zid-core.h
