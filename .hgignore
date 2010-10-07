@@ -29,6 +29,7 @@ syntax: glob
 ./zed/aclocal.m4
 ./zed/bin
 ./zed/build/frida-ios
+./zed/build/frida-linux
 ./zed/build/frida-osx
 ./zed/build/sdk-ios
 ./zed/build/sdk-osx
@@ -56,6 +57,15 @@ syntax: glob
 ./zed/ext/libgum/config.sub
 ./zed/ext/libgum/configure
 ./zed/ext/libgum/depcomp
+./zed/ext/libgum/ext/Makefile
+./zed/ext/libgum/ext/Makefile.in
+./zed/ext/libgum/ext/udis86/Makefile
+./zed/ext/libgum/ext/udis86/Makefile.in
+./zed/ext/libgum/ext/udis86/libudis86/*.la
+./zed/ext/libgum/ext/udis86/libudis86/*.lo
+./zed/ext/libgum/ext/udis86/libudis86/.libs
+./zed/ext/libgum/ext/udis86/libudis86/Makefile
+./zed/ext/libgum/ext/udis86/libudis86/Makefile.in
 ./zed/ext/libgum/gum-1.0.pc
 ./zed/ext/libgum/gum/*.la
 ./zed/ext/libgum/gum/*.lo
@@ -65,6 +75,7 @@ syntax: glob
 ./zed/ext/libgum/install-sh
 ./zed/ext/libgum/libtool
 ./zed/ext/libgum/ltmain.sh
+./zed/ext/libgum/m4
 ./zed/ext/libgum/missing
 ./zed/ext/libgum/stamp-h1
 ./zed/ext/libgum/tests/*.la
@@ -104,6 +115,7 @@ syntax: glob
 ./zed/lib/interfaces/zed-interfaces.vapi
 ./zed/libtool
 ./zed/ltmain.sh
+./zed/m4
 ./zed/missing
 ./zed/obj
 ./zed/server/Makefile
@@ -136,6 +148,8 @@ syntax: glob
 ./zed/server/tests/zed-server-tests.h
 ./zed/server/vapi/Makefile
 ./zed/server/vapi/Makefile.in
+./zed/src/Makefile
+./zed/src/Makefile.in
 ./zed/stamp-h1
 ./zed/tests/labrats/bin
 ./zed/tests/labrats/obj
