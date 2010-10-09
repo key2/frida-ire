@@ -160,6 +160,13 @@ syntax: glob
 ./zed/server/vapi/Makefile.in
 ./zed/src/Makefile
 ./zed/src/Makefile.in
+./zed/src/*.la
+./zed/src/*.lo
+./zed/src/.libs
+./zed/src/*/*.c
+./zed/src/*.[ch]
+./zed/src/*.vapi
+./zed/src/zed
 ./zed/stamp-h1
 ./zed/tests/labrats/bin
 ./zed/tests/labrats/obj
