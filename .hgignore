@@ -153,3 +153,7 @@ syntax: glob
 ./zed/stamp-h1
 ./zed/tests/labrats/bin
 ./zed/tests/labrats/obj
+./zed/tools/Makefile
+./zed/tools/Makefile.in
+./zed/tools/resource-compiler
+./zed/tools/resource-compiler.c
