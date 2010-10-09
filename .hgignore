@@ -43,6 +43,14 @@ syntax: glob
 ./zed/config.status
 ./zed/config.sub
 ./zed/configure
+./zed/data/*.la
+./zed/data/*.lo
+./zed/data/.libs
+./zed/data/Makefile
+./zed/data/Makefile.in
+./zed/data/zed-data-*.[ch]
+./zed/data/zed-data-*.vapi
+./zed/data/zed-data-stamp
 ./zed/depcomp
 ./zed/ext/libgum/INSTALL
 ./zed/ext/libgum/Makefile
@@ -75,7 +83,8 @@ syntax: glob
 ./zed/ext/libgum/install-sh
 ./zed/ext/libgum/libtool
 ./zed/ext/libgum/ltmain.sh
-./zed/ext/libgum/m4
+./zed/ext/libgum/m4/libtool.m4
+./zed/ext/libgum/m4/lt*.m4
 ./zed/ext/libgum/missing
 ./zed/ext/libgum/stamp-h1
 ./zed/ext/libgum/tests/*.la
@@ -115,7 +124,8 @@ syntax: glob
 ./zed/lib/interfaces/zed-interfaces.vapi
 ./zed/libtool
 ./zed/ltmain.sh
-./zed/m4
+./zed/m4/libtool.m4
+./zed/m4/lt*.m4
 ./zed/missing
 ./zed/obj
 ./zed/server/Makefile
