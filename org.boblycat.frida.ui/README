@@ -1,0 +1,15 @@
+
+  Frida Web Frontend
+----------------------
+
+This package will become the Java-based frontend for Frida, capable of running
+in a Java-enabled browser. But this belongs to the future.
+
+It is presently a test bed for the code provided by in frida.core
+and frida.plugin.*
+
+The present code is not designed with any reasonable MVC in mind, nor is it
+capable of connecting to remote Frida services via XMPP, like the other Frida
+frontends.
+
+ 
