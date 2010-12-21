@@ -117,6 +117,11 @@ syntax: glob
 ./zed/ext/libgum/tests/heap/.libs
 ./zed/ext/libgum/tests/heap/Makefile
 ./zed/ext/libgum/tests/heap/Makefile.in
+./zed/ext/libgum/tests/prof/*.la
+./zed/ext/libgum/tests/prof/*.lo
+./zed/ext/libgum/tests/prof/.libs
+./zed/ext/libgum/tests/prof/Makefile
+./zed/ext/libgum/tests/prof/Makefile.in
 ./zed/ext/libgum/vapi/Makefile
 ./zed/ext/libgum/vapi/Makefile.in
 ./zed/ext/sdk
