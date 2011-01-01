@@ -7,7 +7,7 @@ package org.boblycat.frida.core
  * Copyright (c) 2010, Karl Trygve Kalleberg, Ole André Vadla Ravnås
  * Licensed under the GNU General Public License, v3
  *
- * @author: karltk @boblycat.org
+ * @author: karltk@boblycat.org
  */
 
 @serializable

@@ -1,16 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <module type="JAVA_MODULE" version="4">
   <component name="FacetManager">
+    <facet type="scala" name="Scala">
+      <configuration>
+        <option name="compilerLibraryLevel" value="Global" />
+        <option name="compilerLibraryName" value="scala-2.8-final" />
+      </configuration>
+    </facet>
     <facet type="Scala" name="Scala">
       <configuration>
         <option name="myScalaCompilerJarPaths">
           <array>
-            <option value="$MODULE_DIR$/../../../../.IdeaIC90/config/plugins/Scala/lib/scala-compiler.jar" />
+            <option value="$USER_HOME$/.IdeaIC90/config/plugins/Scala/lib/scala-compiler.jar" />
           </array>
         </option>
         <option name="myScalaSdkJarPaths">
           <array>
-            <option value="$MODULE_DIR$/../../../../.IdeaIC90/config/plugins/Scala/lib/scala-library.jar" />
+            <option value="$USER_HOME$/.IdeaIC90/config/plugins/Scala/lib/scala-library.jar" />
           </array>
         </option>
       </configuration>
@@ -25,7 +31,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="scala-2.8.0-beta1" level="application" />
+    <orderEntry type="library" name="scala-2.8-final" level="application" />
   </component>
 </module>
 
