@@ -28,11 +28,14 @@ syntax: glob
 ./zed/README
 ./zed/aclocal.m4
 ./zed/bin
+./zed/build/frida-android
 ./zed/build/frida-ios
 ./zed/build/frida-linux
 ./zed/build/frida-osx
+./zed/build/sdk-android
 ./zed/build/sdk-ios
 ./zed/build/sdk-osx
+./zed/build/tmp-android
 ./zed/build/tmp-ios
 ./zed/build/tmp-osx
 ./zed/build/toolchain
