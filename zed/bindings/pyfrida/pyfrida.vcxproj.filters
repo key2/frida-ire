@@ -15,8 +15,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="placeholder.c">
+    <ClCompile Include="$(IntDir)frida.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="frida.defs">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

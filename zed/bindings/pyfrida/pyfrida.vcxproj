@@ -67,96 +67,127 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <CustomBuildBeforeTargets>Link</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>InitializeBuildStatus</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <CustomBuildBeforeTargets>Link</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>InitializeBuildStatus</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <CustomBuildBeforeTargets>Link</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>InitializeBuildStatus</CustomBuildBeforeTargets>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <CustomBuildBeforeTargets>Link</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets>InitializeBuildStatus</CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>$(IntDir)pyfrida.def</ModuleDefinitionFile>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;wocky.lib;crypto.lib;ssl.lib;libxml2.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\runtime\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
       <Command>echo EXPORTS &gt; "$(IntDir)pyfrida.def"
-"$(SolutionDir)ext\egrep.exe" "^zed_" "$(IntDir)..\zed-core\zed-core.symbols" | "$(SolutionDir)ext\egrep.exe" -v "^zed_service_(win|fruity|tcp|agent_descriptor|value|param)" &gt;&gt; "$(IntDir)pyfrida.def"
+"$(SolutionDir)ext\egrep.exe" "^zed_" "$(IntDir)..\zed-core\zed-core.symbols" &gt; "$(IntDir)pyfrida.def_" || exit 1
+"$(SolutionDir)ext\egrep.exe" "^GType zed.*_get_type " "$(IntDir)..\zed-core\zed-core.h" | "$(SolutionDir)ext\gawk.exe" "{ print $2; }" &gt;&gt; "$(IntDir)pyfrida.def_" || exit 1
+"$(SolutionDir)ext\sort.exe" -u "$(IntDir)pyfrida.def_" | "$(SolutionDir)ext\egrep.exe" -v "^zed_(win|fruity|tcp|agent_descriptor|value|param|protocol|xmpp|base_service|muc)" | "$(SolutionDir)ext\gawk.exe" "{ print \"\t\" $0 }" &gt;&gt; "$(IntDir)pyfrida.def" || exit 1
+del "$(IntDir)pyfrida.def_"
+"C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\codegen\codegen.py" --prefix pyfrida frida.defs &gt; "$(IntDir)frida.c" || exit 1
 REM. &gt; "$(IntDir)pyfrida.stamp"
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Message>Generating def file</Message>
+      <Message>Generating pyfrida files</Message>
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>$(IntDir)pyfrida.stamp</Outputs>
     </CustomBuildStep>
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Python27\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>$(IntDir)pyfrida.def</ModuleDefinitionFile>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;wocky.lib;crypto.lib;ssl.lib;libxml2.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\runtime\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
       <Command>echo EXPORTS &gt; "$(IntDir)pyfrida.def"
-"$(SolutionDir)ext\egrep.exe" "^zed_" "$(IntDir)..\zed-core\zed-core.symbols" | "$(SolutionDir)ext\egrep.exe" -v "^zed_service_(win|fruity|tcp|agent_descriptor|value|param)" &gt;&gt; "$(IntDir)pyfrida.def"
+"$(SolutionDir)ext\egrep.exe" "^zed_" "$(IntDir)..\zed-core\zed-core.symbols" &gt; "$(IntDir)pyfrida.def_" || exit 1
+"$(SolutionDir)ext\egrep.exe" "^GType zed.*_get_type " "$(IntDir)..\zed-core\zed-core.h" | "$(SolutionDir)ext\gawk.exe" "{ print $2; }" &gt;&gt; "$(IntDir)pyfrida.def_" || exit 1
+"$(SolutionDir)ext\sort.exe" -u "$(IntDir)pyfrida.def_" | "$(SolutionDir)ext\egrep.exe" -v "^zed_(win|fruity|tcp|agent_descriptor|value|param|protocol|xmpp|base_service|muc)" | "$(SolutionDir)ext\gawk.exe" "{ print \"\t\" $0 }" &gt;&gt; "$(IntDir)pyfrida.def" || exit 1
+del "$(IntDir)pyfrida.def_"
+"C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\codegen\codegen.py" --prefix pyfrida frida.defs &gt; "$(IntDir)frida.c" || exit 1
 REM. &gt; "$(IntDir)pyfrida.stamp"
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Message>Generating def file</Message>
+      <Message>Generating pyfrida files</Message>
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>$(IntDir)pyfrida.stamp</Outputs>
     </CustomBuildStep>
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Python27\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>$(IntDir)pyfrida.def</ModuleDefinitionFile>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;wocky.lib;crypto.lib;ssl.lib;libxml2.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\runtime\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
       <Command>echo EXPORTS &gt; "$(IntDir)pyfrida.def"
-"$(SolutionDir)ext\egrep.exe" "^zed_" "$(IntDir)..\zed-core\zed-core.symbols" | "$(SolutionDir)ext\egrep.exe" -v "^zed_service_(win|fruity|tcp|agent_descriptor|value|param)" &gt;&gt; "$(IntDir)pyfrida.def"
+"$(SolutionDir)ext\egrep.exe" "^zed_" "$(IntDir)..\zed-core\zed-core.symbols" &gt; "$(IntDir)pyfrida.def_" || exit 1
+"$(SolutionDir)ext\egrep.exe" "^GType zed.*_get_type " "$(IntDir)..\zed-core\zed-core.h" | "$(SolutionDir)ext\gawk.exe" "{ print $2; }" &gt;&gt; "$(IntDir)pyfrida.def_" || exit 1
+"$(SolutionDir)ext\sort.exe" -u "$(IntDir)pyfrida.def_" | "$(SolutionDir)ext\egrep.exe" -v "^zed_(win|fruity|tcp|agent_descriptor|value|param|protocol|xmpp|base_service|muc)" | "$(SolutionDir)ext\gawk.exe" "{ print \"\t\" $0 }" &gt;&gt; "$(IntDir)pyfrida.def" || exit 1
+del "$(IntDir)pyfrida.def_"
+"C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\codegen\codegen.py" --prefix pyfrida frida.defs &gt; "$(IntDir)frida.c" || exit 1
 REM. &gt; "$(IntDir)pyfrida.stamp"
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Message>Generating def file</Message>
+      <Message>Generating pyfrida files</Message>
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>$(IntDir)pyfrida.stamp</Outputs>
     </CustomBuildStep>
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Python27\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>$(IntDir)pyfrida.def</ModuleDefinitionFile>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;wocky.lib;crypto.lib;ssl.lib;libxml2.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalLibraryDirectories>C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\runtime\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
       <Command>echo EXPORTS &gt; "$(IntDir)pyfrida.def"
-"$(SolutionDir)ext\egrep.exe" "^zed_" "$(IntDir)..\zed-core\zed-core.symbols" | "$(SolutionDir)ext\egrep.exe" -v "^zed_service_(win|fruity|tcp|agent_descriptor|value|param)" &gt;&gt; "$(IntDir)pyfrida.def"
+"$(SolutionDir)ext\egrep.exe" "^zed_" "$(IntDir)..\zed-core\zed-core.symbols" &gt; "$(IntDir)pyfrida.def_" || exit 1
+"$(SolutionDir)ext\egrep.exe" "^GType zed.*_get_type " "$(IntDir)..\zed-core\zed-core.h" | "$(SolutionDir)ext\gawk.exe" "{ print $2; }" &gt;&gt; "$(IntDir)pyfrida.def_" || exit 1
+"$(SolutionDir)ext\sort.exe" -u "$(IntDir)pyfrida.def_" | "$(SolutionDir)ext\egrep.exe" -v "^zed_(win|fruity|tcp|agent_descriptor|value|param|protocol|xmpp|base_service|muc)" | "$(SolutionDir)ext\gawk.exe" "{ print \"\t\" $0 }" &gt;&gt; "$(IntDir)pyfrida.def" || exit 1
+del "$(IntDir)pyfrida.def_"
+"C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\codegen\codegen.py" --prefix pyfrida frida.defs &gt; "$(IntDir)frida.c" || exit 1
 REM. &gt; "$(IntDir)pyfrida.stamp"
 </Command>
     </CustomBuildStep>
     <CustomBuildStep>
-      <Message>Generating def file</Message>
+      <Message>Generating pyfrida files</Message>
     </CustomBuildStep>
     <CustomBuildStep>
       <Outputs>$(IntDir)pyfrida.stamp</Outputs>
     </CustomBuildStep>
+    <ClCompile>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Python27\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="placeholder.c">
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4206;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4206;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4206;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-      <DisableSpecificWarnings Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4206;%(DisableSpecificWarnings)</DisableSpecificWarnings>
-    </ClCompile>
+    <ClCompile Include="$(IntDir)frida.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\zed-core.vcxproj">
