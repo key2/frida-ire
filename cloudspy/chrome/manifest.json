@@ -6,7 +6,6 @@
     "default_icon": "icon.png"
   },
   "plugins": [
-    { "path": "cloudspy.dll", "public": true },
-  ],
+    { "path": "cloudspy.dll", "public": true }
+  ]
 }
-
