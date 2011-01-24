@@ -27,6 +27,9 @@
     <None Include="cloud-spy.def">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="cloud-spy-root.vala">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="npapi.h">
@@ -50,6 +53,9 @@
     <ClInclude Include="$(IntDir)cloud-spy.h">
       <Filter>Header Files\generated</Filter>
     </ClInclude>
+    <ClInclude Include="cloud-spy-plugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cloud-spy-object.cpp">
@@ -61,6 +67,15 @@
     <ClCompile Include="$(IntDir)cloud-spy-root.c">
       <Filter>Source Files\generated</Filter>
     </ClCompile>
+    <ClCompile Include="cloud-spy-api-glue.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)cloud-spy-api.c">
+      <Filter>Source Files\generated</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)cloud-spy-api-marshal.c">
+      <Filter>Source Files\generated</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="cloud-spy.rc">
@@ -68,7 +83,7 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="cloud-spy-root.vala">
+    <CustomBuild Include="cloud-spy-api.vala">
       <Filter>Source Files</Filter>
     </CustomBuild>
   </ItemGroup>

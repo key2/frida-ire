@@ -1,7 +1,8 @@
 #include "cloud-spy-object.h"
 
-#define VC_EXTRALEAN
-#include <windows.h>
+#include "cloud-spy.h"
+#include "cloud-spy-plugin.h"
+
 #include "npfunctions.h"
 
 typedef struct _CloudSpyObjectPrivate CloudSpyObjectPrivate;
@@ -11,7 +12,7 @@ typedef struct _CloudSpyNPClass CloudSpyNPClass;
 
 struct _CloudSpyObjectPrivate
 {
-  guint foo;
+  CloudSpyDispatcher * dispatcher;
 };
 
 struct _CloudSpyNPObject
@@ -27,6 +28,9 @@ struct _CloudSpyNPClass
   CloudSpyObjectClass * g_class;
 };
 
+static void cloud_spy_object_constructed (GObject * object);
+static void cloud_spy_object_dispose (GObject * object);
+
 G_DEFINE_TYPE (CloudSpyObject, cloud_spy_object, G_TYPE_OBJECT);
 
 static NPNetscapeFuncs * cloud_spy_nsfuncs = NULL;
@@ -34,13 +38,43 @@ static NPNetscapeFuncs * cloud_spy_nsfuncs = NULL;
 static void
 cloud_spy_object_class_init (CloudSpyObjectClass * klass)
 {
+  GObjectClass * object_class = G_OBJECT_CLASS (klass);
+
   g_type_class_add_private (klass, sizeof (CloudSpyObjectPrivate));
+
+  object_class->constructed = cloud_spy_object_constructed;
+  object_class->dispose = cloud_spy_object_dispose;
 }
 
 static void
 cloud_spy_object_init (CloudSpyObject * self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, CLOUD_SPY_TYPE_OBJECT, CloudSpyObjectPrivate);
+}
+
+static void
+cloud_spy_object_constructed (GObject * object)
+{
+  CloudSpyObject * self = CLOUD_SPY_OBJECT (object);
+
+  self->priv->dispatcher = cloud_spy_dispatcher_new_for_object (self);
+
+  if (G_OBJECT_CLASS (cloud_spy_object_parent_class)->constructed != NULL)
+    G_OBJECT_CLASS (cloud_spy_object_parent_class)->constructed (object);
+}
+
+static void
+cloud_spy_object_dispose (GObject * object)
+{
+  CloudSpyObjectPrivate * priv = CLOUD_SPY_OBJECT (object)->priv;
+
+  if (priv->dispatcher != NULL)
+  {
+    g_object_unref (priv->dispatcher);
+    priv->dispatcher = NULL;
+  }
+
+  G_OBJECT_CLASS (cloud_spy_object_parent_class)->dispose (object);
 }
 
 static NPObject *
@@ -76,23 +110,41 @@ cloud_spy_object_invalidate (NPObject * npobj)
 static bool
 cloud_spy_object_has_method (NPObject * npobj, NPIdentifier name)
 {
-  (void) npobj;
-  (void) name;
+  CloudSpyObjectPrivate * priv = reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object->priv;
 
-  return false;
+  return cloud_spy_dispatcher_has_method (priv->dispatcher, static_cast<NPString *> (name)->UTF8Characters) != NULL;
 }
 
 static bool
 cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * args, uint32_t arg_count, NPVariant * result)
 {
-  (void) npobj;
-  (void) name;
+  CloudSpyObjectPrivate * priv = reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object->priv;
+  GVariant * params_in, * params_out;
+  GError * err = NULL;
+
   (void) args;
   (void) arg_count;
   (void) result;
 
-  cloud_spy_nsfuncs->setexception (npobj, "invoke() is not yet implemented");
-  return false;
+  params_in = g_variant_new_maybe (G_VARIANT_TYPE_INT32, NULL);
+
+  params_out = cloud_spy_dispatcher_invoke (priv->dispatcher, static_cast<NPString *> (name)->UTF8Characters, params_in, &err);
+  if (err != NULL)
+    goto invoke_failed;
+
+  g_variant_unref (params_in);
+  if (params_out != NULL)
+    g_variant_unref (params_out);
+
+  return true;
+
+invoke_failed:
+  {
+    g_variant_unref (params_in);
+    cloud_spy_nsfuncs->setexception (npobj, err->message);
+    g_clear_error (&err);
+    return false;
+  }
 }
 
 static bool

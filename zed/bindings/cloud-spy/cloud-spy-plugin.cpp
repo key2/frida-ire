@@ -1,6 +1,7 @@
-#include "cloud-spy-object.h"
+#include "cloud-spy-plugin.h"
 
 #include "cloud-spy.h"
+#include "cloud-spy-object.h"
 
 #include <glib-object.h>
 #define VC_EXTRALEAN
@@ -66,20 +67,17 @@ cloud_spy_plugin_get_value (NPP instance, NPPVariable variable, void * value)
   switch (variable)
   {
     case NPPVpluginNameString:
-      *((char **) value) = "CloudSpyPlugin";
+      *((char **) value) = "CloudSpy";
       break;
-
     case NPPVpluginDescriptionString:
       *((char **) value) = "<a href=\"http://apps.facebook.com/cloud_spy/\">CloudSpy</a> plugin.";
       break;
-
     case NPPVpluginScriptableNPObject:
       if (cloud_spy_root_object == NULL)
         cloud_spy_root_object = cloud_spy_nsfuncs->createobject (instance, static_cast<NPClass *> (cloud_spy_object_type_get_np_class (CLOUD_SPY_TYPE_ROOT)));
       cloud_spy_nsfuncs->retainobject (cloud_spy_root_object);
       *((NPObject **) value) = cloud_spy_root_object;
       break;
-
     default:
       return NPERR_GENERIC_ERROR;
   }
@@ -105,8 +103,6 @@ NP_GetEntryPoints (NPPluginFuncs * pf)
 NPError OSCALL
 NP_Initialize (NPNetscapeFuncs * nf)
 {
-  /*MessageBox (NULL, _T ("Yo"), _T ("NP_Initialize"), MB_ICONINFORMATION | MB_OK);*/
-
   if (nf == NULL)
     return NPERR_INVALID_FUNCTABLE_ERROR;
 
@@ -122,8 +118,6 @@ NP_Initialize (NPNetscapeFuncs * nf)
 NPError OSCALL
 NP_Shutdown (void)
 {
-  /*MessageBox (NULL, _T ("Yo"), _T ("NP_Shutdown"), MB_ICONINFORMATION | MB_OK);*/
-
   cloud_spy_object_type_deinit ();
   cloud_spy_nsfuncs = NULL;
 
@@ -133,5 +127,5 @@ NP_Shutdown (void)
 char *
 NP_GetMIMEDescription (void)
 {
-  return "application/x-vnd-cloud-spy:.cloud-spy:oleavr@gmail.com";
+  return "application/x-vnd-cloud-spy:.cspy:oleavr@gmail.com";
 }
