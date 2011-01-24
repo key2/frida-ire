@@ -216,12 +216,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="$(IntDir)cloud-spy-api-marshal.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="$(IntDir)cloud-spy-root.c">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">TurnOffAllWarnings</WarningLevel>
@@ -256,19 +250,15 @@
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)valacode.stamp;%(Outputs)</Outputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)cloud-spy.vapi;$(ProjectDir)cloud-spy-api.vala;$(ProjectDir)cloud-spy-root.vala;%(AdditionalInputs)</AdditionalInputs>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloud-spy-api.vala cloud-spy-root.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloud-spy --header=$(IntDir)cloud-spy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloud-spy-object --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
-"$(SolutionDir)ext\egrep.exe" -v "^#include " "$(IntDir)cloud-spy-api.c" &gt; "$(IntDir)cloud-spy-api-marshal.c"
 echo &gt; "$(IntDir)valacode.stamp"
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloud-spy-api.vala cloud-spy-root.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloud-spy --header=$(IntDir)cloud-spy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloud-spy-object --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
-"$(SolutionDir)ext\egrep.exe" -v "^#include " "$(IntDir)cloud-spy-api.c" &gt; "$(IntDir)cloud-spy-api-marshal.c"
 echo &gt; "$(IntDir)valacode.stamp"
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloud-spy-api.vala cloud-spy-root.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloud-spy --header=$(IntDir)cloud-spy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloud-spy-object --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
-"$(SolutionDir)ext\egrep.exe" -v "^#include " "$(IntDir)cloud-spy-api.c" &gt; "$(IntDir)cloud-spy-api-marshal.c"
 echo &gt; "$(IntDir)valacode.stamp"
 </Command>
       <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloud-spy-api.vala cloud-spy-root.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloud-spy --header=$(IntDir)cloud-spy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloud-spy-object --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
-"$(SolutionDir)ext\egrep.exe" -v "^#include " "$(IntDir)cloud-spy-api.c" &gt; "$(IntDir)cloud-spy-api-marshal.c"
 echo &gt; "$(IntDir)valacode.stamp"
 </Command>
     </CustomBuild>

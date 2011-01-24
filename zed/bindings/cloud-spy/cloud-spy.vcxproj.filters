@@ -73,9 +73,6 @@
     <ClCompile Include="$(IntDir)cloud-spy-api.c">
       <Filter>Source Files\generated</Filter>
     </ClCompile>
-    <ClCompile Include="$(IntDir)cloud-spy-api-marshal.c">
-      <Filter>Source Files\generated</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="cloud-spy.rc">
