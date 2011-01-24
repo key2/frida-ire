@@ -5,6 +5,7 @@ syntax: glob
 .scala_dependencies
 bin/.keep
 *~
+*.aps
 *.cache
 *.idc
 *.ipch

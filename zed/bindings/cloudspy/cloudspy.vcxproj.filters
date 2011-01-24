@@ -16,6 +16,9 @@
     <Filter Include="Header Files\npapi">
       <UniqueIdentifier>{35193949-2ea0-42b0-af45-f95febb3748f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\generated">
+      <UniqueIdentifier>{5ead67c8-8721-4225-a2f7-83b5a17c21de}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="cloudspy.def">
@@ -38,15 +41,29 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cloudspyobject.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cloudspy.cpp">
+    <ClCompile Include="cloudspyobject.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="cloudspyplugin.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)cloudspyroot.c">
+      <Filter>Source Files\generated</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="cloudspy.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="cloudspyroot.vala">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>

@@ -1,13 +1,17 @@
+#include "cloudspyobject.h"
+
 #include <glib-object.h>
 #define VC_EXTRALEAN
 #include <windows.h>
 #include <tchar.h>
 #include "npfunctions.h"
 
-static NPNetscapeFuncs * cloudspy_nsfuncs = NULL;
+static NPNetscapeFuncs * cloud_spy_nsfuncs = NULL;
+
+static NPObject * cloud_spy_root_object = NULL;
 
 static NPError
-cloudspy_plugin_new (NPMIMEType plugin_type, NPP instance, uint16_t mode, int16_t argc, char * argn[], char * argv[],
+cloud_spy_plugin_new (NPMIMEType plugin_type, NPP instance, uint16_t mode, int16_t argc, char * argn[], char * argv[],
     NPSavedData * saved)
 {
   (void) plugin_type;
@@ -22,16 +26,20 @@ cloudspy_plugin_new (NPMIMEType plugin_type, NPP instance, uint16_t mode, int16_
 }
 
 static NPError
-cloudspy_plugin_destroy (NPP instance, NPSavedData ** saved)
+cloud_spy_plugin_destroy (NPP instance, NPSavedData ** saved)
 {
   (void) instance;
   (void) saved;
+
+  if (cloud_spy_root_object != NULL)
+    cloud_spy_nsfuncs->releaseobject (cloud_spy_root_object);
+  cloud_spy_root_object = NULL;
 
   return NPERR_NO_ERROR;
 }
 
 static NPError
-cloudspy_plugin_set_window (NPP instance, NPWindow * window)
+cloud_spy_plugin_set_window (NPP instance, NPWindow * window)
 {
   (void) instance;
   (void) window;
@@ -40,7 +48,7 @@ cloudspy_plugin_set_window (NPP instance, NPWindow * window)
 }
 
 static int16_t
-cloudspy_plugin_handle_event (NPP instance, void * ev)
+cloud_spy_plugin_handle_event (NPP instance, void * ev)
 {
   (void) instance;
   (void) ev;
@@ -49,7 +57,7 @@ cloudspy_plugin_handle_event (NPP instance, void * ev)
 }
 
 static NPError
-cloudspy_plugin_get_value (NPP instance, NPPVariable variable, void * value)
+cloud_spy_plugin_get_value (NPP instance, NPPVariable variable, void * value)
 {
   (void) instance;
 
@@ -60,7 +68,14 @@ cloudspy_plugin_get_value (NPP instance, NPPVariable variable, void * value)
       break;
 
     case NPPVpluginDescriptionString:
-      *((char **) value) = "<a href=\"http://apps.facebook.com/cloudspy/\">CloudSpy</a> plugin.";
+      *((char **) value) = "<a href=\"http://apps.facebook.com/cloud_spy/\">CloudSpy</a> plugin.";
+      break;
+
+    case NPPVpluginScriptableNPObject:
+      if (cloud_spy_root_object == NULL)
+        cloud_spy_root_object = cloud_spy_nsfuncs->createobject (instance, (NPClass *) cloud_spy_object_get_np_class ());
+      cloud_spy_nsfuncs->retainobject (cloud_spy_root_object);
+      *((NPObject **) value) = cloud_spy_root_object;
       break;
 
     default:
@@ -78,11 +93,11 @@ NP_GetEntryPoints (NPPluginFuncs * pf)
   g_type_init ();
 
   pf->version = (NP_VERSION_MAJOR << 8) | NP_VERSION_MINOR;
-  pf->newp = cloudspy_plugin_new;
-  pf->destroy = cloudspy_plugin_destroy;
-  pf->setwindow = cloudspy_plugin_set_window;
-  pf->event = cloudspy_plugin_handle_event;
-  pf->getvalue = cloudspy_plugin_get_value;
+  pf->newp = cloud_spy_plugin_new;
+  pf->destroy = cloud_spy_plugin_destroy;
+  pf->setwindow = cloud_spy_plugin_set_window;
+  pf->event = cloud_spy_plugin_handle_event;
+  pf->getvalue = cloud_spy_plugin_get_value;
 
   return NPERR_NO_ERROR;
 }
@@ -98,7 +113,7 @@ NP_Initialize (NPNetscapeFuncs * nf)
   if (HIBYTE (nf->version) > NP_VERSION_MAJOR)
     return NPERR_INCOMPATIBLE_VERSION_ERROR;
 
-  cloudspy_nsfuncs = nf;
+  cloud_spy_nsfuncs = nf;
 
   return NPERR_NO_ERROR;
 }
@@ -108,7 +123,7 @@ NP_Shutdown (void)
 {
   MessageBox (NULL, _T ("Yo"), _T ("NP_Shutdown"), MB_ICONINFORMATION | MB_OK);
 
-  cloudspy_nsfuncs = NULL;
+  cloud_spy_nsfuncs = NULL;
 
   return NPERR_NO_ERROR;
 }
