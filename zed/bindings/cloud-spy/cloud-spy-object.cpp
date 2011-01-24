@@ -62,18 +62,15 @@ cloud_spy_object_deallocate (NPObject * npobj)
 {
   CloudSpyNPObject * np_object = reinterpret_cast<CloudSpyNPObject *> (npobj);
 
-  g_assert (np_object->g_object == NULL);
+  g_assert (np_object->g_object != NULL);
+  g_object_unref (np_object->g_object);
   g_slice_free (CloudSpyNPObject, np_object);
 }
 
 static void
 cloud_spy_object_invalidate (NPObject * npobj)
 {
-  CloudSpyNPObject * np_object = reinterpret_cast<CloudSpyNPObject *> (npobj);
-
-  g_assert (np_object->g_object != NULL);
-  g_object_unref (np_object->g_object);
-  np_object->g_object = NULL;
+  (void) npobj;
 }
 
 static bool
