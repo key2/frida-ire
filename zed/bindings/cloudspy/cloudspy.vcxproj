@@ -107,8 +107,14 @@
       </Inputs>
     </CustomBuildStep>
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\Python27\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloudspy\chrome\"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Deploying plugin</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
@@ -131,8 +137,14 @@
       </Inputs>
     </CustomBuildStep>
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\Python27\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloudspy\chrome\"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Deploying plugin</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
@@ -155,8 +167,14 @@
       </Inputs>
     </CustomBuildStep>
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\Python27\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloudspy\chrome\"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Deploying plugin</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
@@ -179,13 +197,24 @@
       </Inputs>
     </CustomBuildStep>
     <ClCompile>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\Python27\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
+    <PostBuildEvent>
+      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloudspy\chrome\"</Command>
+    </PostBuildEvent>
+    <PostBuildEvent>
+      <Message>Deploying plugin</Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cloudspyobject.cpp" />
     <ClCompile Include="cloudspyplugin.cpp" />
-    <ClCompile Include="$(IntDir)cloudspyroot.c" />
+    <ClCompile Include="$(IntDir)cloudspyroot.c">
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
+      <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\zed-core.vcxproj">
@@ -228,6 +257,7 @@ echo &gt; "$(IntDir)valacode.stamp"
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="$(IntDir)cloudspy.h" />
     <ClInclude Include="cloudspyobject.h" />
     <ClInclude Include="npapi.h" />
     <ClInclude Include="npfunctions.h" />

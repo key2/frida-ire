@@ -19,6 +19,12 @@
     <Filter Include="Source Files\generated">
       <UniqueIdentifier>{5ead67c8-8721-4225-a2f7-83b5a17c21de}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\NewFilter1">
+      <UniqueIdentifier>{5c207390-9012-42bb-ace3-7c83390cd429}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\generated">
+      <UniqueIdentifier>{e49bb2ed-51e5-4279-97c3-790f3fd9ee8d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="cloudspy.def">
@@ -43,6 +49,9 @@
     </ClInclude>
     <ClInclude Include="cloudspyobject.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="$(IntDir)cloudspy.h">
+      <Filter>Header Files\generated</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

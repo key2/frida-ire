@@ -13,6 +13,6 @@
     "https://*/*"
   ],
   "plugins": [
-    { "path": "cloudspy.dll" }
+    { "path": "cloudspy.dll", "public": true }
   ]
 }

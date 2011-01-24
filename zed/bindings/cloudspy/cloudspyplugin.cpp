@@ -1,5 +1,7 @@
 #include "cloudspyobject.h"
 
+#include "cloudspy.h"
+
 #include <glib-object.h>
 #define VC_EXTRALEAN
 #include <windows.h>
@@ -73,7 +75,7 @@ cloud_spy_plugin_get_value (NPP instance, NPPVariable variable, void * value)
 
     case NPPVpluginScriptableNPObject:
       if (cloud_spy_root_object == NULL)
-        cloud_spy_root_object = cloud_spy_nsfuncs->createobject (instance, (NPClass *) cloud_spy_object_get_np_class ());
+        cloud_spy_root_object = cloud_spy_nsfuncs->createobject (instance, static_cast<NPClass *> (cloud_spy_object_type_get_np_class (CLOUD_SPY_TYPE_ROOT)));
       cloud_spy_nsfuncs->retainobject (cloud_spy_root_object);
       *((NPObject **) value) = cloud_spy_root_object;
       break;
@@ -88,8 +90,6 @@ cloud_spy_plugin_get_value (NPP instance, NPPVariable variable, void * value)
 NPError OSCALL
 NP_GetEntryPoints (NPPluginFuncs * pf)
 {
-  MessageBox (NULL, _T ("Yo"), _T ("NP_GetEntryPoints"), MB_ICONINFORMATION | MB_OK);
-
   g_type_init ();
 
   pf->version = (NP_VERSION_MAJOR << 8) | NP_VERSION_MINOR;
@@ -105,7 +105,7 @@ NP_GetEntryPoints (NPPluginFuncs * pf)
 NPError OSCALL
 NP_Initialize (NPNetscapeFuncs * nf)
 {
-  MessageBox (NULL, _T ("Yo"), _T ("NP_Initialize"), MB_ICONINFORMATION | MB_OK);
+  /*MessageBox (NULL, _T ("Yo"), _T ("NP_Initialize"), MB_ICONINFORMATION | MB_OK);*/
 
   if (nf == NULL)
     return NPERR_INVALID_FUNCTABLE_ERROR;
@@ -114,6 +114,7 @@ NP_Initialize (NPNetscapeFuncs * nf)
     return NPERR_INCOMPATIBLE_VERSION_ERROR;
 
   cloud_spy_nsfuncs = nf;
+  cloud_spy_object_type_init (nf);
 
   return NPERR_NO_ERROR;
 }
@@ -121,8 +122,9 @@ NP_Initialize (NPNetscapeFuncs * nf)
 NPError OSCALL
 NP_Shutdown (void)
 {
-  MessageBox (NULL, _T ("Yo"), _T ("NP_Shutdown"), MB_ICONINFORMATION | MB_OK);
+  /*MessageBox (NULL, _T ("Yo"), _T ("NP_Shutdown"), MB_ICONINFORMATION | MB_OK);*/
 
+  cloud_spy_object_type_deinit ();
   cloud_spy_nsfuncs = NULL;
 
   return NPERR_NO_ERROR;
@@ -131,7 +133,5 @@ NP_Shutdown (void)
 char *
 NP_GetMIMEDescription (void)
 {
-  MessageBox (NULL, _T ("Yo"), _T ("NP_GetMIMEDescription"), MB_ICONINFORMATION | MB_OK);
-
   return "application/x-vnd-cloudspy:.cloudspy:oleavr@gmail.com";
 }

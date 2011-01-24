@@ -2,5 +2,7 @@
 namespace CloudSpy {
 	[CCode (cheader_filename = "cloudspyobject.h")]
 	public abstract class Object : GLib.Object {
+		[CCode (has_construct_function = false)]
+		protected Object ();
 	}
 }
