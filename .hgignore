@@ -24,7 +24,7 @@ syntax: regexp
 \.class$
 
 syntax: glob
-./cloudspy/chrome/cloudspy.dll
+./cloud-spy/chrome/cloud-spy.dll
 
 syntax: glob
 ./zed/INSTALL

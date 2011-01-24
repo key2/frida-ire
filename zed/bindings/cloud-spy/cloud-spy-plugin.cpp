@@ -1,6 +1,6 @@
-#include "cloudspyobject.h"
+#include "cloud-spy-object.h"
 
-#include "cloudspy.h"
+#include "cloud-spy.h"
 
 #include <glib-object.h>
 #define VC_EXTRALEAN
@@ -133,5 +133,5 @@ NP_Shutdown (void)
 char *
 NP_GetMIMEDescription (void)
 {
-  return "application/x-vnd-cloudspy:.cloudspy:oleavr@gmail.com";
+  return "application/x-vnd-cloud-spy:.cloud-spy:oleavr@gmail.com";
 }

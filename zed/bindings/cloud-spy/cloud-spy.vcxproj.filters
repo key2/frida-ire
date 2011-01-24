@@ -24,7 +24,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="cloudspy.def">
+    <None Include="cloud-spy.def">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
@@ -44,31 +44,31 @@
     <ClInclude Include="resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="cloudspyobject.h">
+    <ClInclude Include="cloud-spy-object.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="$(IntDir)cloudspy.h">
+    <ClInclude Include="$(IntDir)cloud-spy.h">
       <Filter>Header Files\generated</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="cloudspyobject.cpp">
+    <ClCompile Include="cloud-spy-object.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="cloudspyplugin.cpp">
+    <ClCompile Include="cloud-spy-plugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="$(IntDir)cloudspyroot.c">
+    <ClCompile Include="$(IntDir)cloud-spy-root.c">
       <Filter>Source Files\generated</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="cloudspy.rc">
+    <ResourceCompile Include="cloud-spy.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <CustomBuild Include="cloudspyroot.vala">
+    <CustomBuild Include="cloud-spy-root.vala">
       <Filter>Source Files</Filter>
     </CustomBuild>
   </ItemGroup>

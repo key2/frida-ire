@@ -1,4 +1,4 @@
-LIBRARY cloudspy.dll
+LIBRARY cloud-spy.dll
 
 EXPORTS
 	NP_GetEntryPoints     @1

@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{99C17854-578D-49E7-BB80-AEBE4B5D3BA6}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>pyfrida</RootNamespace>
+    <RootNamespace>frida</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -89,7 +89,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Link>
       <SubSystem>Windows</SubSystem>
-      <ModuleDefinitionFile>cloudspy.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>cloud-spy.def</ModuleDefinitionFile>
       <AdditionalDependencies>glib-2.0.lib;gthread-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;intl.lib;ole32.lib;shell32.lib;user32.lib</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
@@ -110,7 +110,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <PostBuildEvent>
-      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloudspy\chrome\"</Command>
+      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloud-spy\chrome\"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Deploying plugin</Message>
@@ -119,7 +119,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Link>
       <SubSystem>Windows</SubSystem>
-      <ModuleDefinitionFile>cloudspy.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>cloud-spy.def</ModuleDefinitionFile>
       <AdditionalDependencies>glib-2.0.lib;gthread-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;intl.lib;ole32.lib;shell32.lib;user32.lib</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
@@ -140,7 +140,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <PostBuildEvent>
-      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloudspy\chrome\"</Command>
+      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloud-spy\chrome\"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Deploying plugin</Message>
@@ -149,7 +149,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Link>
       <SubSystem>Windows</SubSystem>
-      <ModuleDefinitionFile>cloudspy.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>cloud-spy.def</ModuleDefinitionFile>
       <AdditionalDependencies>glib-2.0.lib;gthread-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;intl.lib;ole32.lib;shell32.lib;user32.lib</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
@@ -170,7 +170,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <PostBuildEvent>
-      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloudspy\chrome\"</Command>
+      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloud-spy\chrome\"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Deploying plugin</Message>
@@ -179,7 +179,7 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Link>
       <SubSystem>Windows</SubSystem>
-      <ModuleDefinitionFile>cloudspy.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>cloud-spy.def</ModuleDefinitionFile>
       <AdditionalDependencies>glib-2.0.lib;gthread-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;intl.lib;ole32.lib;shell32.lib;user32.lib</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
@@ -200,16 +200,16 @@
       <AdditionalIncludeDirectories>$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <PostBuildEvent>
-      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloudspy\chrome\"</Command>
+      <Command>copy /B /Y "$(TargetPath)" "$(SolutionDir)..\cloud-spy\chrome\"</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Deploying plugin</Message>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="cloudspyobject.cpp" />
-    <ClCompile Include="cloudspyplugin.cpp" />
-    <ClCompile Include="$(IntDir)cloudspyroot.c">
+    <ClCompile Include="cloud-spy-object.cpp" />
+    <ClCompile Include="cloud-spy-plugin.cpp" />
+    <ClCompile Include="$(IntDir)cloud-spy-root.c">
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">TurnOffAllWarnings</WarningLevel>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">TurnOffAllWarnings</WarningLevel>
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">TurnOffAllWarnings</WarningLevel>
@@ -227,38 +227,38 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="cloudspy.def" />
-    <CustomBuild Include="cloudspyroot.vala">
+    <None Include="cloud-spy.def" />
+    <CustomBuild Include="cloud-spy-root.vala">
       <FileType>Document</FileType>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling vala code</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(IntDir)valacode.stamp;%(Outputs)</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)cloudspy.vapi;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)cloud-spy.vapi;%(AdditionalInputs)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling vala code</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(IntDir)valacode.stamp;%(Outputs)</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)cloudspy.vapi;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)cloud-spy.vapi;%(AdditionalInputs)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compiling vala code</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(IntDir)valacode.stamp;%(Outputs)</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)cloudspy.vapi;%(AdditionalInputs)</AdditionalInputs>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)cloud-spy.vapi;%(AdditionalInputs)</AdditionalInputs>
       <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compiling vala code</Message>
       <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(IntDir)valacode.stamp;%(Outputs)</Outputs>
-      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)cloudspy.vapi;%(AdditionalInputs)</AdditionalInputs>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloudspyroot.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloudspy --header=$(IntDir)cloudspy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloudspyobject --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)ext\sdk\vala\valac.exe;$(ProjectDir)cloud-spy.vapi;%(AdditionalInputs)</AdditionalInputs>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloud-spy-root.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloud-spy --header=$(IntDir)cloud-spy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloud-spy-object --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
 echo &gt; "$(IntDir)valacode.stamp"
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloudspyroot.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloudspy --header=$(IntDir)cloudspy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloudspyobject --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloud-spy-root.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloud-spy --header=$(IntDir)cloud-spy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloud-spy-object --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
 echo &gt; "$(IntDir)valacode.stamp"
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloudspyroot.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloudspy --header=$(IntDir)cloudspy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloudspyobject --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloud-spy-root.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloud-spy --header=$(IntDir)cloud-spy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloud-spy-object --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
 echo &gt; "$(IntDir)valacode.stamp"
 </Command>
-      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloudspyroot.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloudspy --header=$(IntDir)cloudspy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloudspyobject --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">"$(SolutionDir)ext\sdk\vala\valac.exe" cloud-spy-root.vala -D WINDOWS --ccode --directory=$(IntDir) --library=cloud-spy --header=$(IntDir)cloud-spy.h --vapidir="." --vapidir="$(SolutionDir)vapi" --vapidir="$(IntDir)..\zed-core" --vapidir="$(SolutionDir)ext\sdk\vala\vapi" --pkg=cloud-spy-object --pkg=config --pkg=gee-1.0 --pkg=gio-2.0 --pkg=zed-core || exit 1
 echo &gt; "$(IntDir)valacode.stamp"
 </Command>
     </CustomBuild>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="$(IntDir)cloudspy.h" />
-    <ClInclude Include="cloudspyobject.h" />
+    <ClInclude Include="$(IntDir)cloud-spy.h" />
+    <ClInclude Include="cloud-spy-object.h" />
     <ClInclude Include="npapi.h" />
     <ClInclude Include="npfunctions.h" />
     <ClInclude Include="npruntime.h" />
@@ -266,7 +266,7 @@ echo &gt; "$(IntDir)valacode.stamp"
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="cloudspy.rc" />
+    <ResourceCompile Include="cloud-spy.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

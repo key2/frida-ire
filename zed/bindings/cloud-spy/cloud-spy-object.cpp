@@ -1,4 +1,4 @@
-#include "cloudspyobject.h"
+#include "cloud-spy-object.h"
 
 #define VC_EXTRALEAN
 #include <windows.h>

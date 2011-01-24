@@ -1,6 +1,6 @@
 {
-  "name": "oSpy",
-  "description": "oSpy",
+  "name": "CloudSpy",
+  "description": "oSpy in the cloud",
   "version": "1.0.0.0",
   "browser_action": {
     "default_icon": "icon.png",
@@ -13,6 +13,6 @@
     "https://*/*"
   ],
   "plugins": [
-    { "path": "cloudspy.dll", "public": true }
+    { "path": "cloud-spy.dll", "public": true }
   ]
 }
