@@ -23,6 +23,9 @@ syntax: regexp
 \.class$
 
 syntax: glob
+./cloudspy/chrome/cloudspy.dll
+
+syntax: glob
 ./zed/INSTALL
 ./zed/Makefile
 ./zed/Makefile.in

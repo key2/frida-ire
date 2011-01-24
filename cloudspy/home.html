@@ -6,6 +6,12 @@
 <div id="fb-root">
   <fb:user-agent includes="chrome">
     You are using Chrome, yay!
+    <embed type="application/x-vnd-cloudspy" id="pluginId"/>
+    <script>
+      var plugin = document.getElementById("pluginId");
+      var process = plugin.attachToProcess();
+      console.log("got process: " + process);
+    </script>
   </fb:user-agent>
   <fb:user-agent excludes="chrome">
     Chrome is required

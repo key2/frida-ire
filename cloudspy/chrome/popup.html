@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <embed type="application/x-vnd-cloudspy" id="pluginId">
+  </head>
+  <body>
+    <script type="text/javascript">
+      function foo() {
+        try {
+          alert(document.getElementById("pluginId").foo());
+        } catch(e) {
+          alert(e);
+        }
+      }
+    </script>
+    <p>
+      <button onclick='foo()'>Call foo()</button>
+    </body>
+</html>

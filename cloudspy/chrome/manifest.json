@@ -1,11 +1,18 @@
 {
   "name": "oSpy",
-  "version": "1.0",
   "description": "oSpy",
+  "version": "1.0.0.0",
   "browser_action": {
-    "default_icon": "icon.png"
+    "default_icon": "icon.png",
+    "default_title": "oSpy",
+    "popup": "popup.html"
   },
+  "permissions": [
+    "tabs",
+    "http://*/*",
+    "https://*/*"
+  ],
   "plugins": [
-    { "path": "cloudspy.dll", "public": true }
+    { "path": "cloudspy.dll" }
   ]
 }
