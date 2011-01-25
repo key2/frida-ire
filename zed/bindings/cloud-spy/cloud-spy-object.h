@@ -31,7 +31,7 @@ struct _CloudSpyObjectClass
 
 GType cloud_spy_object_get_type (void) G_GNUC_CONST;
 
-G_GNUC_INTERNAL void cloud_spy_object_type_init (gpointer nsfuncs);
+G_GNUC_INTERNAL void cloud_spy_object_type_init (void);
 G_GNUC_INTERNAL void cloud_spy_object_type_deinit (void);
 G_GNUC_INTERNAL gpointer cloud_spy_object_type_get_np_class (GType gtype);
 

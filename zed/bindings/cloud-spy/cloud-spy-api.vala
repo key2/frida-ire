@@ -24,7 +24,11 @@ namespace CloudSpy {
 			if (method == null)
 				throw new IOError.NOT_FOUND ("no such method");
 
-			return do_invoke (method, parameters);
+			var parameters_out = do_invoke (method, parameters);
+			if (parameters_out == null)
+				return null;
+			assert (parameters_out.n_children () == 1);
+			return parameters_out.get_child_value (0);
 		}
 
 		private extern Variant? do_invoke (DBusMethodInfo * method, Variant parameters) throws IOError;

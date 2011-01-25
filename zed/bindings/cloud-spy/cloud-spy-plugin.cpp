@@ -9,7 +9,7 @@
 #include <tchar.h>
 #include "npfunctions.h"
 
-static NPNetscapeFuncs * cloud_spy_nsfuncs = NULL;
+NPNetscapeFuncs * cloud_spy_nsfuncs;
 
 static NPObject * cloud_spy_root_object = NULL;
 
@@ -88,6 +88,8 @@ cloud_spy_plugin_get_value (NPP instance, NPPVariable variable, void * value)
 NPError OSCALL
 NP_GetEntryPoints (NPPluginFuncs * pf)
 {
+  CLOUD_SPY_ATTACHPOINT ();
+
   g_type_init ();
 
   pf->version = (NP_VERSION_MAJOR << 8) | NP_VERSION_MINOR;
@@ -110,7 +112,7 @@ NP_Initialize (NPNetscapeFuncs * nf)
     return NPERR_INCOMPATIBLE_VERSION_ERROR;
 
   cloud_spy_nsfuncs = nf;
-  cloud_spy_object_type_init (nf);
+  cloud_spy_object_type_init ();
 
   return NPERR_NO_ERROR;
 }
@@ -128,4 +130,13 @@ char *
 NP_GetMIMEDescription (void)
 {
   return "application/x-vnd-cloud-spy:.cspy:oleavr@gmail.com";
+}
+
+void
+cloud_spy_init_npvariant_with_string (NPVariant * var, const gchar * str)
+{
+  guint len = strlen (str);
+  NPUTF8 * str_copy = static_cast<NPUTF8 *> (cloud_spy_nsfuncs->memalloc (len));
+  memcpy (str_copy, str, len);
+  STRINGN_TO_NPVARIANT (str_copy, len, *var);
 }

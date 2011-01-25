@@ -56,6 +56,9 @@
     <ClInclude Include="cloud-spy-plugin.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="cloud-spy-variant.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="cloud-spy-object.cpp">
@@ -72,6 +75,9 @@
     </ClCompile>
     <ClCompile Include="$(IntDir)cloud-spy-api.c">
       <Filter>Source Files\generated</Filter>
+    </ClCompile>
+    <ClCompile Include="cloud-spy-variant.cpp">
+      <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
