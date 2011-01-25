@@ -4,8 +4,10 @@ namespace CloudSpy {
 			get { return 28; }
 		}
 
-		public string[] foo () throws IOError {
-			return { "I am a badger", "I am a snake" };
+		public string[] say_hello_to (string name) throws IOError {
+			if (name == "Badger")
+				throw new IOError.FAILED ("I won't say hello to Mr Badger");
+			return { "Hello " + name, "I am a snake" };
 		}
 	}
 }

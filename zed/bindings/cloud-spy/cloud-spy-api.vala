@@ -1,7 +1,7 @@
 namespace CloudSpy {
 	[DBus (name = "com.appspot.cloud-spy.RootApi")]
 	public interface RootApi : Object {
-		public abstract string[] foo () throws IOError;
+		public abstract string[] say_hello_to (string name) throws IOError;
 	}
 
 	public class Dispatcher : GLib.Object {
@@ -19,12 +19,18 @@ namespace CloudSpy {
 			return find_method_by_name (name) != null;
 		}
 
-		public Variant? invoke (string name, Variant parameters) throws IOError {
+		public Variant? invoke (string name, Variant? args) throws IOError {
 			var method = find_method_by_name (name);
 			if (method == null)
 				throw new IOError.NOT_FOUND ("no such method");
 
-			var parameters_out = do_invoke (method, parameters);
+			/* FIXME: argument validation */
+
+			var parameters_in = args;
+			if (parameters_in == null)
+				parameters_in = new Variant.int32 (42);
+
+			var parameters_out = do_invoke (method, parameters_in);
 			if (parameters_out == null)
 				return null;
 			assert (parameters_out.n_children () == 1);

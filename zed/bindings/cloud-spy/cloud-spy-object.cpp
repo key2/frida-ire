@@ -33,6 +33,8 @@ struct _CloudSpyNPObjectClass
 static void cloud_spy_object_constructed (GObject * object);
 static void cloud_spy_object_dispose (GObject * object);
 
+GVariant * cloud_spy_object_parse_argument_list (const NPVariant * args, guint arg_count, GError ** err);
+
 G_DEFINE_TYPE (CloudSpyObject, cloud_spy_object, G_TYPE_OBJECT);
 
 static void
@@ -126,7 +128,9 @@ cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * 
   (void) args;
   (void) arg_count;
 
-  args_var = g_variant_new_maybe (G_VARIANT_TYPE_INT32, NULL);
+  args_var = cloud_spy_object_parse_argument_list (args, arg_count, &err);
+  if (args_var == NULL)
+    goto invoke_failed;
 
   result_var = cloud_spy_dispatcher_invoke (priv->dispatcher, static_cast<NPString *> (name)->UTF8Characters, args_var, &err);
   if (err != NULL)
@@ -224,6 +228,63 @@ cannot_marshal:
   {
     cloud_spy_nsfuncs->setexception (npobj, "type cannot be marshalled");
     return false;
+  }
+}
+
+GVariant *
+cloud_spy_object_parse_argument_list (const NPVariant * args, guint arg_count, GError ** err)
+{
+  GVariantBuilder builder;
+  guint i;
+
+  if (arg_count == 0)
+    return NULL;
+
+  g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
+
+  for (i = 0; i != arg_count; i++)
+  {
+    const NPVariant * var = &args[i];
+
+    switch (var->type)
+    {
+      case NPVariantType_Bool:
+        g_variant_builder_add_value (&builder, g_variant_new_boolean (NPVARIANT_TO_BOOLEAN (*var)));
+        break;
+      case NPVariantType_Int32:
+        g_variant_builder_add_value (&builder, g_variant_new_int32 (NPVARIANT_TO_INT32 (*var)));
+        break;
+      case NPVariantType_Double:
+        g_variant_builder_add_value (&builder, g_variant_new_double (NPVARIANT_TO_DOUBLE (*var)));
+        break;
+      case NPVariantType_String:
+      {
+        gchar * str;
+
+        str = (gchar *) g_malloc (var->value.stringValue.UTF8Length + 1);
+        memcpy (str, var->value.stringValue.UTF8Characters, var->value.stringValue.UTF8Length);
+        str[var->value.stringValue.UTF8Length] = '\0';
+
+        g_variant_builder_add_value (&builder, g_variant_new_string (str));
+
+        g_free (str);
+
+        break;
+      }
+      case NPVariantType_Object:
+      case NPVariantType_Void:
+      case NPVariantType_Null:
+        goto invalid_type;
+    }
+  }
+
+  return g_variant_builder_end (&builder);
+
+invalid_type:
+  {
+    g_variant_builder_clear (&builder);
+    g_set_error (err, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "argument has invalid type");
+    return NULL;
   }
 }
 
