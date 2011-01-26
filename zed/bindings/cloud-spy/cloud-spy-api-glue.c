@@ -59,6 +59,55 @@ cloud_spy_dispatcher_do_invoke (CloudSpyDispatcher * self, GDBusMethodInfo * met
   return invocation.return_parameters;
 }
 
+void
+cloud_spy_dispatcher_validate_argument_list (CloudSpyDispatcher * self, GVariant * args, GDBusMethodInfo * method, GError ** error)
+{
+  guint actual_arg_count, expected_arg_count;
+  GDBusArgInfo ** ai;
+  guint i;
+
+  (void) self;
+
+  actual_arg_count = (args != NULL) ? g_variant_n_children (args) : 0;
+  expected_arg_count = 0;
+  for (ai = method->in_args; *ai != NULL; ai++)
+    expected_arg_count++;
+  if (actual_arg_count != expected_arg_count)
+    goto count_mismatch;
+
+  for (i = 0; i != expected_arg_count; i++)
+  {
+    GVariant * arg;
+    const GVariantType * actual_type;
+    GVariantType * expected_type;
+    gboolean types_are_equal;
+
+    arg = g_variant_get_child_value (args, i);
+    actual_type = g_variant_get_type (arg);
+    expected_type = g_variant_type_new (method->in_args[i]->signature);
+    types_are_equal = g_variant_type_equal (actual_type, expected_type);
+    g_variant_type_free (expected_type);
+    g_variant_unref (arg);
+
+    if (!types_are_equal)
+      goto type_mismatch;
+  }
+
+  return;
+
+  /* ERRORS */
+count_mismatch:
+  {
+    g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "argument count mismatch");
+    return;
+  }
+type_mismatch:
+  {
+    g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "argument type mismatch");
+    return;
+  }
+}
+
 static void
 cloud_spy_dispatcher_invocation_return_value (GDBusMethodInvocation * invocation, GVariant * parameters)
 {

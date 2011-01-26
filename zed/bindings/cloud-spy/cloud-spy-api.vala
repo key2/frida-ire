@@ -24,7 +24,7 @@ namespace CloudSpy {
 			if (method == null)
 				throw new IOError.NOT_FOUND ("no such method");
 
-			/* FIXME: argument validation */
+			validate_argument_list (args, method);
 
 			var parameters_in = args;
 			if (parameters_in == null)
@@ -54,5 +54,7 @@ namespace CloudSpy {
 
 			return null;
 		}
+
+		private extern void validate_argument_list (Variant? args, DBusMethodInfo * method) throws IOError;
 	}
 }

@@ -129,7 +129,7 @@ cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * 
   (void) arg_count;
 
   args_var = cloud_spy_object_parse_argument_list (args, arg_count, &err);
-  if (args_var == NULL)
+  if (err != NULL)
     goto invoke_failed;
 
   result_var = cloud_spy_dispatcher_invoke (priv->dispatcher, static_cast<NPString *> (name)->UTF8Characters, args_var, &err);
@@ -147,7 +147,8 @@ cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * 
 
 invoke_failed:
   {
-    g_variant_unref (args_var);
+    if (args_var != NULL)
+      g_variant_unref (args_var);
     cloud_spy_nsfuncs->setexception (npobj, err->message);
     g_clear_error (&err);
     return false;
@@ -240,7 +241,7 @@ cloud_spy_object_parse_argument_list (const NPVariant * args, guint arg_count, G
   if (arg_count == 0)
     return NULL;
 
-  g_variant_builder_init (&builder, G_VARIANT_TYPE_ARRAY);
+  g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
 
   for (i = 0; i != arg_count; i++)
   {
