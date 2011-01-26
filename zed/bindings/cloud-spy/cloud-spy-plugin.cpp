@@ -88,8 +88,6 @@ cloud_spy_plugin_get_value (NPP instance, NPPVariable variable, void * value)
 NPError OSCALL
 NP_GetEntryPoints (NPPluginFuncs * pf)
 {
-  CLOUD_SPY_ATTACHPOINT ();
-
   g_type_init ();
 
   pf->version = (NP_VERSION_MAJOR << 8) | NP_VERSION_MINOR;

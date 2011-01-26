@@ -33,7 +33,9 @@ struct _CloudSpyNPObjectClass
 static void cloud_spy_object_constructed (GObject * object);
 static void cloud_spy_object_dispose (GObject * object);
 
-GVariant * cloud_spy_object_parse_argument_list (const NPVariant * args, guint arg_count, GError ** err);
+GVariant * cloud_spy_object_argument_list_to_gvariant (const NPVariant * args, guint arg_count, GError ** err);
+static void cloud_spy_object_return_value_to_npvariant (CloudSpyObject * self, GVariant * retval, NPVariant * result);
+static void cloud_spy_object_gvariant_to_npvariant (CloudSpyObject * self, GVariant * retval, NPVariant * result);
 
 G_DEFINE_TYPE (CloudSpyObject, cloud_spy_object, G_TYPE_OBJECT);
 
@@ -121,14 +123,15 @@ cloud_spy_object_has_method (NPObject * npobj, NPIdentifier name)
 static bool
 cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * args, uint32_t arg_count, NPVariant * result)
 {
-  CloudSpyObjectPrivate * priv = reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object->priv;
+  CloudSpyObject * self = reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object;
+  CloudSpyObjectPrivate * priv = self->priv;
   GVariant * args_var, * result_var;
   GError * err = NULL;
 
   (void) args;
   (void) arg_count;
 
-  args_var = cloud_spy_object_parse_argument_list (args, arg_count, &err);
+  args_var = cloud_spy_object_argument_list_to_gvariant (args, arg_count, &err);
   if (err != NULL)
     goto invoke_failed;
 
@@ -136,12 +139,10 @@ cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * 
   if (err != NULL)
     goto invoke_failed;
 
-  if (result_var == NULL)
-    VOID_TO_NPVARIANT (*result);
-  else
-    OBJECT_TO_NPVARIANT (cloud_spy_variant_new (priv->npp, result_var), *result);
+  cloud_spy_object_return_value_to_npvariant (self, result_var, result);
 
-  g_variant_unref (args_var);
+  if (args_var != NULL)
+    g_variant_unref (args_var);
 
   return true;
 
@@ -233,7 +234,7 @@ cannot_marshal:
 }
 
 GVariant *
-cloud_spy_object_parse_argument_list (const NPVariant * args, guint arg_count, GError ** err)
+cloud_spy_object_argument_list_to_gvariant (const NPVariant * args, guint arg_count, GError ** err)
 {
   GVariantBuilder builder;
   guint i;
@@ -287,6 +288,42 @@ invalid_type:
     g_set_error (err, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "argument has invalid type");
     return NULL;
   }
+}
+
+static void
+cloud_spy_object_return_value_to_npvariant (CloudSpyObject * self, GVariant * retval, NPVariant * result)
+{
+  if (retval == NULL)
+  {
+    VOID_TO_NPVARIANT (*result);
+    return;
+  }
+
+  cloud_spy_object_gvariant_to_npvariant (self, retval, result);
+}
+
+static void
+cloud_spy_object_gvariant_to_npvariant (CloudSpyObject * self, GVariant * retval, NPVariant * result)
+{
+  const GVariantType * type;
+
+  type = g_variant_get_type (retval);
+  if (g_variant_type_is_container (type))
+  {
+    OBJECT_TO_NPVARIANT (cloud_spy_variant_new (self->priv->npp, retval), *result);
+    return;
+  }
+
+  if (g_variant_type_equal (type, G_VARIANT_TYPE_BOOLEAN))
+    BOOLEAN_TO_NPVARIANT (g_variant_get_boolean (retval), *result);
+  else if (g_variant_type_equal (type, G_VARIANT_TYPE_INT32))
+    INT32_TO_NPVARIANT (g_variant_get_int32 (retval), *result);
+  else if (g_variant_type_equal (type, G_VARIANT_TYPE_DOUBLE))
+    DOUBLE_TO_NPVARIANT (g_variant_get_double (retval), *result);
+  else if (g_variant_type_equal (type, G_VARIANT_TYPE_STRING))
+    cloud_spy_init_npvariant_with_string (result, g_variant_get_string (retval, NULL));
+  else
+    g_assert_not_reached ();
 }
 
 static NPClass cloud_spy_object_template_np_class =

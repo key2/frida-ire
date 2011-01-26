@@ -1,7 +1,7 @@
 namespace CloudSpy {
 	[DBus (name = "com.appspot.cloud-spy.RootApi")]
 	public interface RootApi : Object {
-		public abstract string[] say_hello_to (string name) throws IOError;
+		public abstract int foo () throws IOError;
 	}
 
 	public class Dispatcher : GLib.Object {
@@ -28,7 +28,7 @@ namespace CloudSpy {
 
 			var parameters_in = args;
 			if (parameters_in == null)
-				parameters_in = new Variant.int32 (42);
+				parameters_in = new Variant.maybe (VariantType.INT32, null);
 
 			var parameters_out = do_invoke (method, parameters_in);
 			if (parameters_out == null)
