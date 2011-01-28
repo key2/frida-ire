@@ -2,7 +2,7 @@ namespace CloudSpy {
 	public class Root : Object, RootApi {
 		public int attach_to (string process_name) throws IOError {
 			var ctx = new AttachContext (this, process_name);
-			ctx.do_attach ();
+			ctx.start ();
 			return ctx.wait_for_completion ();
 		}
 
@@ -14,9 +14,18 @@ namespace CloudSpy {
 			private Error error;
 
 			public AttachContext (Object parent, string process_name) {
-				this.loop = new MainLoop (parent.main_context (), true);
+				this.loop = new MainLoop (MainContext.get_thread_default (), true);
 
 				this.process_name = process_name;
+			}
+
+			public void start () {
+				var idle = new IdleSource ();
+				idle.set_callback (() => {
+					do_attach ();
+					return false;
+				});
+				idle.attach (MainContext.get_thread_default ());
 			}
 
 			public int wait_for_completion () throws IOError {
@@ -36,7 +45,7 @@ namespace CloudSpy {
 				loop.quit ();
 			}
 
-			public async void do_attach () {
+			private async void do_attach () {
 				try {
 					var service = new Zed.HostSessionService.with_local_backend_only ();
 
