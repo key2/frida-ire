@@ -68,6 +68,13 @@ syntax: glob
 ./zed/ext/libgum/Makefile.in
 ./zed/ext/libgum/README
 ./zed/ext/libgum/aclocal.m4
+./zed/ext/libgum/bindings/Makefile
+./zed/ext/libgum/bindings/Makefile.in
+./zed/ext/libgum/bindings/gumpp/*.la
+./zed/ext/libgum/bindings/gumpp/*.lo
+./zed/ext/libgum/bindings/gumpp/.libs
+./zed/ext/libgum/bindings/gumpp/Makefile
+./zed/ext/libgum/bindings/gumpp/Makefile.in
 ./zed/ext/libgum/config.guess
 ./zed/ext/libgum/config.h
 ./zed/ext/libgum/config.h.in
