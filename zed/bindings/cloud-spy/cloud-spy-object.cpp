@@ -15,6 +15,7 @@ struct _CloudSpyObjectPrivate
 {
   NPP npp;
   CloudSpyDispatcher * dispatcher;
+  GCond * cond;
 };
 
 struct _CloudSpyNPObject
@@ -32,12 +33,18 @@ struct _CloudSpyNPObjectClass
 
 static void cloud_spy_object_constructed (GObject * object);
 static void cloud_spy_object_dispose (GObject * object);
+static void cloud_spy_object_finalize (GObject * object);
 
-GVariant * cloud_spy_object_argument_list_to_gvariant (const NPVariant * args, guint arg_count, GError ** err);
+static gboolean cloud_spy_object_do_invoke (gpointer data);
+static gboolean cloud_spy_object_do_get_property (gpointer data);
+
+static GVariant * cloud_spy_object_argument_list_to_gvariant (const NPVariant * args, guint arg_count, GError ** err);
 static void cloud_spy_object_return_value_to_npvariant (CloudSpyObject * self, GVariant * retval, NPVariant * result);
 static void cloud_spy_object_gvariant_to_npvariant (CloudSpyObject * self, GVariant * retval, NPVariant * result);
 
 G_DEFINE_TYPE (CloudSpyObject, cloud_spy_object, G_TYPE_OBJECT);
+
+G_LOCK_DEFINE_STATIC (cloud_spy_object);
 
 static void
 cloud_spy_object_class_init (CloudSpyObjectClass * klass)
@@ -48,12 +55,15 @@ cloud_spy_object_class_init (CloudSpyObjectClass * klass)
 
   object_class->constructed = cloud_spy_object_constructed;
   object_class->dispose = cloud_spy_object_dispose;
+  object_class->finalize = cloud_spy_object_finalize;
 }
 
 static void
 cloud_spy_object_init (CloudSpyObject * self)
 {
   self->priv = G_TYPE_INSTANCE_GET_PRIVATE (self, CLOUD_SPY_TYPE_OBJECT, CloudSpyObjectPrivate);
+
+  self->priv->cond = g_cond_new ();
 }
 
 static void
@@ -79,6 +89,16 @@ cloud_spy_object_dispose (GObject * object)
   }
 
   G_OBJECT_CLASS (cloud_spy_object_parent_class)->dispose (object);
+}
+
+static void
+cloud_spy_object_finalize (GObject * object)
+{
+  CloudSpyObject * self = CLOUD_SPY_OBJECT (object);
+
+  g_cond_free (self->priv->cond);
+
+  G_OBJECT_CLASS (cloud_spy_object_parent_class)->finalize (object);
 }
 
 static NPObject *
@@ -120,40 +140,78 @@ cloud_spy_object_has_method (NPObject * npobj, NPIdentifier name)
   return cloud_spy_dispatcher_has_method (priv->dispatcher, static_cast<NPString *> (name)->UTF8Characters) != NULL;
 }
 
+typedef struct _CloudSpyInvokeContext CloudSpyInvokeContext;
+
+struct _CloudSpyInvokeContext
+{
+  CloudSpyObject * self;
+
+  const gchar * function_name;
+  GVariant * arguments;
+  GVariant * result;
+  GError * error;
+
+  volatile gboolean completed;
+};
+
 static bool
 cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * args, uint32_t arg_count, NPVariant * result)
 {
-  CloudSpyObject * self = reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object;
-  CloudSpyObjectPrivate * priv = self->priv;
-  GVariant * args_var, * result_var;
-  GError * err = NULL;
+  CloudSpyInvokeContext ctx = { 0, };
+  GSource * source;
 
-  (void) args;
-  (void) arg_count;
+  ctx.self = reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object;
 
-  args_var = cloud_spy_object_argument_list_to_gvariant (args, arg_count, &err);
-  if (err != NULL)
+  ctx.function_name = static_cast<NPString *> (name)->UTF8Characters;
+  ctx.arguments = cloud_spy_object_argument_list_to_gvariant (args, arg_count, &ctx.error);
+  if (ctx.error != NULL)
     goto invoke_failed;
 
-  result_var = cloud_spy_dispatcher_invoke (priv->dispatcher, static_cast<NPString *> (name)->UTF8Characters, args_var, &err);
-  if (err != NULL)
+  source = g_idle_source_new ();
+  g_source_set_priority (source, G_PRIORITY_HIGH);
+  g_source_set_callback (source, cloud_spy_object_do_invoke, &ctx, NULL);
+  g_source_attach (source, cloud_spy_main_context);
+  g_source_unref (source);
+
+  G_LOCK (cloud_spy_object);
+  while (!ctx.completed)
+    g_cond_wait (ctx.self->priv->cond, g_static_mutex_get_mutex (&G_LOCK_NAME (cloud_spy_object)));
+  G_UNLOCK (cloud_spy_object);
+
+  if (ctx.error != NULL)
     goto invoke_failed;
 
-  cloud_spy_object_return_value_to_npvariant (self, result_var, result);
+  cloud_spy_object_return_value_to_npvariant (ctx.self, ctx.result, result);
 
-  if (args_var != NULL)
-    g_variant_unref (args_var);
+  if (ctx.arguments != NULL)
+    g_variant_unref (ctx.arguments);
 
   return true;
 
 invoke_failed:
   {
-    if (args_var != NULL)
-      g_variant_unref (args_var);
-    cloud_spy_nsfuncs->setexception (npobj, err->message);
-    g_clear_error (&err);
+    if (ctx.arguments != NULL)
+      g_variant_unref (ctx.arguments);
+    cloud_spy_nsfuncs->setexception (npobj, ctx.error->message);
+    g_clear_error (&ctx.error);
     return false;
   }
+}
+
+static gboolean
+cloud_spy_object_do_invoke (gpointer data)
+{
+  CloudSpyInvokeContext * ctx = static_cast<CloudSpyInvokeContext *> (data);
+  CloudSpyObjectPrivate * priv = ctx->self->priv;
+
+  ctx->result = cloud_spy_dispatcher_invoke (priv->dispatcher, ctx->function_name, ctx->arguments, &ctx->error);
+
+  G_LOCK (cloud_spy_object);
+  ctx->completed = TRUE;
+  g_cond_signal (priv->cond);
+  G_UNLOCK (cloud_spy_object);
+
+  return FALSE;
 }
 
 static bool
@@ -177,46 +235,70 @@ cloud_spy_object_has_property (NPObject * npobj, NPIdentifier name)
   return g_object_class_find_property (G_OBJECT_CLASS (np_class->g_class), name_str->UTF8Characters) != NULL;
 }
 
+typedef struct _CloudSpyGetPropertyContext CloudSpyGetPropertyContext;
+
+struct _CloudSpyGetPropertyContext
+{
+  CloudSpyObject * self;
+
+  const gchar * property_name;
+  GValue value;
+
+  volatile gboolean completed;
+};
+
 static bool
 cloud_spy_object_get_property (NPObject * npobj, NPIdentifier name, NPVariant * result)
 {
   CloudSpyNPObject * np_object = reinterpret_cast<CloudSpyNPObject *> (npobj);
   CloudSpyNPObjectClass * np_class = reinterpret_cast<CloudSpyNPObjectClass *> (npobj->_class);
-  NPString * name_str = static_cast<NPString *> (name);
+  CloudSpyGetPropertyContext ctx = { 0, };
   GParamSpec * spec;
-  GValue val = { 0, };
+  GSource * source;
 
-  spec = g_object_class_find_property (G_OBJECT_CLASS (np_class->g_class), name_str->UTF8Characters);
+  ctx.self = np_object->g_object;
+
+  ctx.property_name = static_cast<NPString *> (name)->UTF8Characters;
+  spec = g_object_class_find_property (G_OBJECT_CLASS (np_class->g_class), ctx.property_name);
   if (spec == NULL)
     goto no_such_property;
+  g_value_init (&ctx.value, spec->value_type);
 
-  g_value_init (&val, spec->value_type);
-  g_object_get_property (G_OBJECT (np_object->g_object), name_str->UTF8Characters, &val);
+  source = g_idle_source_new ();
+  g_source_set_priority (source, G_PRIORITY_HIGH);
+  g_source_set_callback (source, cloud_spy_object_do_get_property, &ctx, NULL);
+  g_source_attach (source, cloud_spy_main_context);
+  g_source_unref (source);
+
+  G_LOCK (cloud_spy_object);
+  while (!ctx.completed)
+    g_cond_wait (ctx.self->priv->cond, g_static_mutex_get_mutex (&G_LOCK_NAME (cloud_spy_object)));
+  G_UNLOCK (cloud_spy_object);
 
   switch (spec->value_type)
   {
     case G_TYPE_BOOLEAN:
-      BOOLEAN_TO_NPVARIANT (g_value_get_boolean (&val), *result);
+      BOOLEAN_TO_NPVARIANT (g_value_get_boolean (&ctx.value), *result);
       break;
     case G_TYPE_INT:
-      INT32_TO_NPVARIANT (g_value_get_int (&val), *result);
+      INT32_TO_NPVARIANT (g_value_get_int (&ctx.value), *result);
       break;
     case G_TYPE_FLOAT:
-      DOUBLE_TO_NPVARIANT ((double) g_value_get_float (&val), *result);
+      DOUBLE_TO_NPVARIANT ((double) g_value_get_float (&ctx.value), *result);
       break;
     case G_TYPE_DOUBLE:
-      DOUBLE_TO_NPVARIANT (g_value_get_double (&val), *result);
+      DOUBLE_TO_NPVARIANT (g_value_get_double (&ctx.value), *result);
       break;
     case G_TYPE_STRING:
     {
-      cloud_spy_init_npvariant_with_string (result, g_value_get_string (&val));
+      cloud_spy_init_npvariant_with_string (result, g_value_get_string (&ctx.value));
       break;
     }
     default:
       goto cannot_marshal;
   }
 
-  g_value_unset (&val);
+  g_value_unset (&ctx.value);
 
   return true;
 
@@ -233,7 +315,23 @@ cannot_marshal:
   }
 }
 
-GVariant *
+static gboolean
+cloud_spy_object_do_get_property (gpointer data)
+{
+  CloudSpyGetPropertyContext * ctx = static_cast<CloudSpyGetPropertyContext *> (data);
+  CloudSpyObjectPrivate * priv = ctx->self->priv;
+
+  g_object_get_property (G_OBJECT (ctx->self), ctx->property_name, &ctx->value);
+
+  G_LOCK (cloud_spy_object);
+  ctx->completed = TRUE;
+  g_cond_signal (priv->cond);
+  G_UNLOCK (cloud_spy_object);
+
+  return FALSE;
+}
+
+static GVariant *
 cloud_spy_object_argument_list_to_gvariant (const NPVariant * args, guint arg_count, GError ** err)
 {
   GVariantBuilder builder;

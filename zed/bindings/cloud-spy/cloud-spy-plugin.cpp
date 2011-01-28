@@ -9,9 +9,33 @@
 #include <tchar.h>
 #include "npfunctions.h"
 
-NPNetscapeFuncs * cloud_spy_nsfuncs;
-
+NPNetscapeFuncs * cloud_spy_nsfuncs = NULL;
+GMainContext * cloud_spy_main_context = NULL;
+static GMainLoop * cloud_spy_main_loop = NULL;
+static GThread * cloud_spy_main_thread = NULL;
 static NPObject * cloud_spy_root_object = NULL;
+
+static gpointer
+cloud_spy_run_main_loop (gpointer data)
+{
+  (void) data;
+
+  g_main_context_push_thread_default (cloud_spy_main_context);
+  g_main_loop_run (cloud_spy_main_loop);
+  g_main_context_pop_thread_default (cloud_spy_main_context);
+
+  return NULL;
+}
+
+static gboolean
+cloud_spy_stop_main_loop (gpointer data)
+{
+  (void) data;
+
+  g_main_loop_quit (cloud_spy_main_loop);
+
+  return FALSE;
+}
 
 static NPError
 cloud_spy_plugin_new (NPMIMEType plugin_type, NPP instance, uint16_t mode, int16_t argc, char * argn[], char * argv[],
@@ -109,8 +133,13 @@ NP_Initialize (NPNetscapeFuncs * nf)
   if (HIBYTE (nf->version) > NP_VERSION_MAJOR)
     return NPERR_INCOMPATIBLE_VERSION_ERROR;
 
-  cloud_spy_nsfuncs = nf;
   cloud_spy_object_type_init ();
+
+  cloud_spy_nsfuncs = nf;
+
+  cloud_spy_main_context = g_main_context_new ();
+  cloud_spy_main_loop = g_main_loop_new (cloud_spy_main_context, FALSE);
+  cloud_spy_main_thread = g_thread_create (cloud_spy_run_main_loop, NULL, TRUE, NULL);
 
   return NPERR_NO_ERROR;
 }
@@ -118,8 +147,24 @@ NP_Initialize (NPNetscapeFuncs * nf)
 NPError OSCALL
 NP_Shutdown (void)
 {
-  cloud_spy_object_type_deinit ();
+  GSource * source;
+
+  source = g_idle_source_new ();
+  g_source_set_priority (source, G_PRIORITY_LOW);
+  g_source_set_callback (source, cloud_spy_stop_main_loop, NULL, NULL);
+  g_source_attach (source, cloud_spy_main_context);
+  g_source_unref (source);
+
+  g_thread_join (cloud_spy_main_thread);
+  cloud_spy_main_thread = NULL;
+  g_main_loop_unref (cloud_spy_main_loop);
+  cloud_spy_main_loop = NULL;
+  g_main_context_unref (cloud_spy_main_context);
+  cloud_spy_main_context = NULL;
+
   cloud_spy_nsfuncs = NULL;
+
+  cloud_spy_object_type_deinit ();
 
   return NPERR_NO_ERROR;
 }
