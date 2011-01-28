@@ -1,7 +1,7 @@
 namespace CloudSpy {
 	[DBus (name = "com.appspot.cloud-spy.RootApi")]
 	public interface RootApi : Object {
-		public abstract string hello () throws IOError;
+		public abstract int attach_to (string process_name) throws IOError;
 	}
 
 	public class Dispatcher : GLib.Object {

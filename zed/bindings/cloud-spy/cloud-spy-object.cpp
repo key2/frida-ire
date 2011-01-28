@@ -101,6 +101,14 @@ cloud_spy_object_finalize (GObject * object)
   G_OBJECT_CLASS (cloud_spy_object_parent_class)->finalize (object);
 }
 
+GMainContext *
+cloud_spy_object_main_context (CloudSpyObject * self)
+{
+  (void) self;
+
+  return cloud_spy_main_context;
+}
+
 static NPObject *
 cloud_spy_object_allocate (NPP npp, NPClass * klass)
 {
