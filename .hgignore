@@ -98,6 +98,7 @@ syntax: glob
 ./zed/ext/libgum/gum/.libs
 ./zed/ext/libgum/gum/Makefile
 ./zed/ext/libgum/gum/Makefile.in
+./zed/ext/libgum/gumpp-1.0.pc
 ./zed/ext/libgum/install-sh
 ./zed/ext/libgum/libs/Makefile
 ./zed/ext/libgum/libs/Makefile.in
