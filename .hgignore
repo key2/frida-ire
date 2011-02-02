@@ -44,6 +44,7 @@ syntax: glob
 ./zed/build/sdk-ps3
 ./zed/build/tmp-android
 ./zed/build/tmp-ios
+./zed/build/tmp-linux
 ./zed/build/tmp-osx
 ./zed/build/tmp-ps3
 ./zed/build/toolchain
