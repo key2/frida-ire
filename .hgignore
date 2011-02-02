@@ -182,11 +182,17 @@ syntax: glob
 ./zed/src/.libs
 ./zed/src/Makefile
 ./zed/src/Makefile.in
+./zed/src/service/code-service.c
 ./zed/src/service/darwin/darwin-host-session.c
 ./zed/src/service/darwin/fruitjector.c
+./zed/src/service/host-session-service.c
+./zed/src/service/storage-backend.c
+./zed/src/service/system.c
 ./zed/src/service/tcp/tcp-host-session.c
 ./zed/src/zed
+./zed/src/zed-core.h
 ./zed/src/zed-server
+./zed/src/zed-server.c
 ./zed/stamp-h1
 ./zed/tests/*.la
 ./zed/tests/*.lo
