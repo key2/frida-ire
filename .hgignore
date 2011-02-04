@@ -187,6 +187,7 @@ syntax: glob
 ./zed/src/service/darwin/darwin-host-session.c
 ./zed/src/service/darwin/fruitjector.c
 ./zed/src/service/host-session-service.c
+./zed/src/service/linux/linjector.c
 ./zed/src/service/storage-backend.c
 ./zed/src/service/system.c
 ./zed/src/service/tcp/tcp-host-session.c
@@ -210,6 +211,7 @@ syntax: glob
 ./zed/tests/test-code-service.c
 ./zed/tests/test-fruitjector.c
 ./zed/tests/test-host-session.c
+./zed/tests/test-linjector.c
 ./zed/tests/test-main.c
 ./zed/tests/test-system.c
 ./zed/tests/zed-tests
