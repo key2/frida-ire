@@ -57,7 +57,7 @@ cloud_spy_variant_invoke (NPObject * npobj, NPIdentifier name, const NPVariant *
   if (strcmp (static_cast<NPString *> (name)->UTF8Characters, "toString") == 0 && arg_count == 0)
   {
     gchar * str;
-    guint len;
+    gsize len;
 
     /* FIXME: should do this ourself -- this is just a hack: */
     str = g_variant_print (self->variant, FALSE);

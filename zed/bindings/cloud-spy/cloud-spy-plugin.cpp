@@ -178,7 +178,7 @@ NP_GetMIMEDescription (void)
 void
 cloud_spy_init_npvariant_with_string (NPVariant * var, const gchar * str)
 {
-  guint len = strlen (str);
+  gsize len = strlen (str);
   NPUTF8 * str_copy = static_cast<NPUTF8 *> (cloud_spy_nsfuncs->memalloc (len));
   memcpy (str_copy, str, len);
   STRINGN_TO_NPVARIANT (str_copy, len, *var);
