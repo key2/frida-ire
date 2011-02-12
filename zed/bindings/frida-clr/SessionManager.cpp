@@ -42,7 +42,10 @@ namespace Frida
     ~Session ()
     {
       g_object_unref (handle);
+      handle = NULL;
+
       delete selfHandle;
+      selfHandle = NULL;
     }
 
     void
@@ -112,10 +115,10 @@ namespace Frida
     }
 
     Session ^
-    AttachTo (int pid)
+    ObtainSessionFor (int pid)
     {
       GError * error = NULL;
-      FridaSession * session = frida_session_manager_attach_to (handle, pid, &error);
+      FridaSession * session = frida_session_manager_obtain_session_for (handle, pid, &error);
 
       if (error != NULL)
         throw gcnew System::Exception (gcnew System::String (error->message));
