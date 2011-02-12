@@ -49,6 +49,12 @@ namespace Frida
     }
 
     void
+    Close ()
+    {
+      frida_session_close (handle);
+    }
+
+    void
     AddGLogPattern (System::String ^ pattern, LogLevel levels)
     {
       gchar * patternUtf8 = Marshal::ClrStringToUTF8CString (pattern);
