@@ -108,10 +108,19 @@ namespace Frida
     }
 
     void
-    SetGMainWatchdogEnabled (bool enable)
+    EnableGMainWatchdog (double maxDuration)
     {
       GError * error = NULL;
-      frida_session_set_gmain_watchdog_enabled (handle, enable, &error);
+      frida_session_enable_gmain_watchdog (handle, maxDuration, &error);
+      if (error != NULL)
+        throw gcnew Exception (gcnew String (error->message));
+    }
+
+    void
+    DisableGMainWatchdog ()
+    {
+      GError * error = NULL;
+      frida_session_disable_gmain_watchdog (handle, &error);
       if (error != NULL)
         throw gcnew Exception (gcnew String (error->message));
     }
