@@ -6,12 +6,16 @@
 #include "Marshal.hpp"
 #include <msclr/gcroot.h>
 
+#using <WindowsBase.dll>
+
+using namespace System;
 using namespace System::Collections::Generic;
+using namespace System::Windows::Threading;
 
 namespace Frida
 {
-  [System::Flags]
-  public enum struct LogLevel : System::UInt32
+  [Flags]
+  public enum struct LogLevel : UInt32
   {
     FlagRecursion = 1 << 0,
     FlagFatal     = 1 << 1,
@@ -24,19 +28,48 @@ namespace Frida
     Debug         = 1 << 7,
   };
 
-  public delegate void LogMessageHandler (System::String ^ domain, LogLevel level, System::String ^ message);
-  static void HandleGLogMessage (FridaSession * session, const gchar * domain, guint level, const gchar * message, gpointer user_data);
+  public ref class LogMessageEventArgs : public EventArgs
+  {
+  public:
+    property String ^ Domain { String ^ get () { return domain; } };
+    property LogLevel Level { LogLevel get () { return level; } };
+    property String ^ Message { String ^ get () { return message; } };
 
+    LogMessageEventArgs (String ^ domain, LogLevel level, String ^ message)
+    {
+      this->domain = domain;
+      this->level = level;
+      this->message = message;
+    }
+
+  private:
+    String ^ domain;
+    LogLevel level;
+    String ^ message;
+  };
+
+  public delegate void LogMessageHandler (Object ^ sender, LogMessageEventArgs ^ e);
+
+  static void OnSessionClosed (FridaSession * session, gpointer user_data);
+  static void OnSessionGLogMessage (FridaSession * session, const gchar * domain, guint level, const gchar * message, gpointer user_data);
+  
   public ref class Session
   {
   public:
+    event EventHandler ^ Closed;
     event LogMessageHandler ^ LogMessage;
 
-    Session (void * handle)
-      : handle (FRIDA_SESSION (handle))
+    Session (void * handle, Dispatcher ^ dispatcher)
+      : handle (FRIDA_SESSION (handle)),
+        dispatcher (dispatcher)
     {
       selfHandle = new msclr::gcroot<Session ^> (this);
-      g_signal_connect (handle, "glog-message", G_CALLBACK (HandleGLogMessage), selfHandle);
+
+      onClosedHandler = gcnew EventHandler (this, &Session::OnClosed);
+      onLogMessageHandler = gcnew LogMessageHandler (this, &Session::OnLogMessage);
+
+      g_signal_connect (handle, "closed", G_CALLBACK (OnSessionClosed), selfHandle);
+      g_signal_connect (handle, "glog-message", G_CALLBACK (OnSessionGLogMessage), selfHandle);
     }
 
     ~Session ()
@@ -55,14 +88,14 @@ namespace Frida
     }
 
     void
-    AddGLogPattern (System::String ^ pattern, LogLevel levels)
+    AddGLogPattern (String ^ pattern, LogLevel levels)
     {
       gchar * patternUtf8 = Marshal::ClrStringToUTF8CString (pattern);
       GError * error = NULL;
       frida_session_add_glog_pattern (handle, patternUtf8, static_cast<guint> (levels), &error);
       g_free (patternUtf8);
       if (error != NULL)
-        throw gcnew System::Exception (gcnew System::String (error->message));
+        throw gcnew Exception (gcnew String (error->message));
     }
 
     void
@@ -71,7 +104,7 @@ namespace Frida
       GError * error = NULL;
       frida_session_clear_glog_patterns (handle, &error);
       if (error != NULL)
-        throw gcnew System::Exception (gcnew System::String (error->message));
+        throw gcnew Exception (gcnew String (error->message));
     }
 
     void
@@ -80,39 +113,65 @@ namespace Frida
       GError * error = NULL;
       frida_session_set_gmain_watchdog_enabled (handle, enable, &error);
       if (error != NULL)
-        throw gcnew System::Exception (gcnew System::String (error->message));
+        throw gcnew Exception (gcnew String (error->message));
     }
 
     void
-    OnLogMessage (System::String ^ domain, LogLevel level, System::String ^ message)
+    OnClosed (Object ^ sender, EventArgs ^ e)
     {
-      LogMessage (domain, level, message);
+      if (dispatcher->CheckAccess ())
+        Closed (sender, e);
+      else
+        dispatcher->BeginInvoke (DispatcherPriority::Normal, onClosedHandler, sender, e);
+    }
+
+    void
+    OnLogMessage (Object ^ sender, LogMessageEventArgs ^ e)
+    {
+      if (dispatcher->CheckAccess ())
+        LogMessage (sender, e);
+      else
+        dispatcher->BeginInvoke (DispatcherPriority::Normal, onLogMessageHandler, sender, e);
     }
 
   private:
     FridaSession * handle;
     msclr::gcroot<Session ^> * selfHandle;
+
+    Dispatcher ^ dispatcher;
+    EventHandler ^ onClosedHandler;
+    LogMessageHandler ^ onLogMessageHandler;
   };
 
   static void
-  HandleGLogMessage (FridaSession * session, const gchar * domain, guint level, const gchar * message, gpointer user_data)
+  OnSessionClosed (FridaSession * session, gpointer user_data)
   {
     (void) session;
 
-    System::String ^ domainObj = Marshal::UTF8CStringToClrString (domain);
-    LogLevel levelObj = static_cast<LogLevel> (level);
-    System::String ^ messageObj = Marshal::UTF8CStringToClrString (message);
+    msclr::gcroot<Session ^> * wrapper = static_cast<msclr::gcroot<Session ^> *> (user_data);
+    (*wrapper)->OnClosed (*wrapper, EventArgs::Empty);
+  }
+
+  static void
+  OnSessionGLogMessage (FridaSession * session, const gchar * domain, guint level, const gchar * message, gpointer user_data)
+  {
+    (void) session;
 
     msclr::gcroot<Session ^> * wrapper = static_cast<msclr::gcroot<Session ^> *> (user_data);
-    (*wrapper)->OnLogMessage (domainObj, levelObj, messageObj);
+    LogMessageEventArgs ^ e = gcnew LogMessageEventArgs (
+        Marshal::UTF8CStringToClrString (domain),
+        static_cast<LogLevel> (level),
+        Marshal::UTF8CStringToClrString (message));
+    (*wrapper)->OnLogMessage (*wrapper, e);
   }
 
   public ref class SessionManager
   {
   public:
-    SessionManager ()
+    SessionManager (Dispatcher ^ dispatcher)
+      : dispatcher (dispatcher),
+        handle (frida_session_manager_new (static_cast<GMainContext *> (Application::GetMainContext ())))
     {
-      handle = frida_session_manager_new (static_cast<GMainContext *> (Application::GetMainContext ()));
     }
 
     ~SessionManager ()
@@ -127,12 +186,13 @@ namespace Frida
       FridaSession * session = frida_session_manager_obtain_session_for (handle, pid, &error);
 
       if (error != NULL)
-        throw gcnew System::Exception (gcnew System::String (error->message));
+        throw gcnew Exception (gcnew String (error->message));
 
-      return gcnew Session (session);
+      return gcnew Session (session, dispatcher);
     }
 
   private:
+    Dispatcher ^ dispatcher;
     FridaSessionManager * handle;
   };
 }
