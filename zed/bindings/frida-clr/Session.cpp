@@ -16,7 +16,7 @@ G_END_DECLS
 namespace Frida
 {
   static void OnSessionClosed (FridaSession * session, gpointer user_data);
-  static void OnSessionGLogMessage (FridaSession * session, const gchar * domain, guint level, const gchar * message, gpointer user_data);
+  static void OnSessionGLogMessage (FridaSession * session, guint64 timestamp, const gchar * domain, guint level, const gchar * message, gpointer user_data);
   static void OnScriptMessage (FridaScript * script, GVariant * msg, gpointer user_data);
 
   Session::Session (void * handle, Dispatcher ^ dispatcher)
@@ -153,12 +153,13 @@ namespace Frida
   }
 
   static void
-  OnSessionGLogMessage (FridaSession * session, const gchar * domain, guint level, const gchar * message, gpointer user_data)
+  OnSessionGLogMessage (FridaSession * session, guint64 timestamp, const gchar * domain, guint level, const gchar * message, gpointer user_data)
   {
     (void) session;
 
     msclr::gcroot<Session ^> * wrapper = static_cast<msclr::gcroot<Session ^> *> (user_data);
     LogMessageEventArgs ^ e = gcnew LogMessageEventArgs (
+        TimeSpan (timestamp / 100),
         Marshal::UTF8CStringToClrString (domain),
         static_cast<LogLevel> (level),
         Marshal::UTF8CStringToClrString (message));

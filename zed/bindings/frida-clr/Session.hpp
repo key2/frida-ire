@@ -105,18 +105,21 @@ namespace Frida
   public ref class LogMessageEventArgs : public EventArgs
   {
   public:
+    property TimeSpan TimeStamp { TimeSpan get () { return timeStamp; } };
     property String ^ Domain { String ^ get () { return domain; } };
     property LogLevel Level { LogLevel get () { return level; } };
     property String ^ Message { String ^ get () { return message; } };
 
-    LogMessageEventArgs (String ^ domain, LogLevel level, String ^ message)
+    LogMessageEventArgs (TimeSpan timeStamp, String ^ domain, LogLevel level, String ^ message)
     {
+      this->timeStamp = timeStamp;
       this->domain = domain;
       this->level = level;
       this->message = message;
     }
 
   private:
+    TimeSpan timeStamp;
     String ^ domain;
     LogLevel level;
     String ^ message;
