@@ -24,12 +24,21 @@
     <ClCompile Include="Marshal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Marshal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="SessionManager.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Session.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

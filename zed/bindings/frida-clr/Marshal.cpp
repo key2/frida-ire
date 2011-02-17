@@ -23,4 +23,14 @@ namespace Frida
     delete context;
     return strUtf8;
   }
+
+  void
+  Marshal::ThrowGErrorIfSet (GError ** error)
+  {
+    if (*error == NULL)
+      return;
+    System::String ^ message = UTF8CStringToClrString ((*error)->message);
+    g_clear_error (error);
+    throw gcnew System::Exception (message);
+  }
 }
