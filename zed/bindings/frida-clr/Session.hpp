@@ -48,6 +48,8 @@ namespace Frida
     Address ResolveModuleBase (String ^ moduleName);
     Address ResolveModuleExport (String ^ moduleName, String ^ symbolName);
 
+    void InvokeFunction (Address address, String ^ arguments);
+
     void AddGLogPattern (String ^ pattern, LogLevel levels);
     void ClearGLogPatterns ();
 

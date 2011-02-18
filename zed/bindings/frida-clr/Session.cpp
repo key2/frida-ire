@@ -92,6 +92,16 @@ namespace Frida
   }
 
   void
+  Session::InvokeFunction (Address address, String ^ arguments)
+  {
+    GError * error = NULL;
+    gchar * argumentsUtf8 = Marshal::ClrStringToUTF8CString (arguments);
+    frida_session_invoke_function (handle, address.Value, argumentsUtf8, &error);
+    g_free (argumentsUtf8);
+    Marshal::ThrowGErrorIfSet (&error);
+  }
+
+  void
   Session::AddGLogPattern (String ^ pattern, LogLevel levels)
   {
     GError * error = NULL;
