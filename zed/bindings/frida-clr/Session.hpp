@@ -16,7 +16,16 @@ namespace Frida
   public delegate void ScriptMessageHandler (Object ^ sender, ScriptMessageEventArgs ^ e);
   ref class LogMessageEventArgs;
   public delegate void LogMessageHandler (Object ^ sender, LogMessageEventArgs ^ e);
-  value struct Address;
+
+  public value struct Address
+  {
+    UInt64 Value;
+
+    Address (UInt64 val)
+      : Value (val)
+    {
+    }
+  };
 
   [Flags]
   public enum struct LogLevel : UInt32
@@ -47,6 +56,7 @@ namespace Frida
 
     Address ResolveModuleBase (String ^ moduleName);
     Address ResolveModuleExport (String ^ moduleName, String ^ symbolName);
+    array<Address> ^ ScanModuleForCodePattern (String ^ moduleName, String ^ pattern);
 
     void InvokeFunction (Address address, String ^ arguments);
 
@@ -125,15 +135,5 @@ namespace Frida
     String ^ domain;
     LogLevel level;
     String ^ message;
-  };
-
-  public value struct Address
-  {
-    UInt64 Value;
-
-    Address (UInt64 val)
-      : Value (val)
-    {
-    }
   };
 }

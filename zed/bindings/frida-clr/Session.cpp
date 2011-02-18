@@ -91,6 +91,29 @@ namespace Frida
     return address;
   }
 
+  array<Address> ^
+  Session::ScanModuleForCodePattern (String ^ moduleName, String ^ pattern)
+  {
+    array<Address> ^ result;
+
+    GError * error = NULL;
+    gchar * moduleNameUtf8 = Marshal::ClrStringToUTF8CString (moduleName);
+    gchar * patternUtf8 = Marshal::ClrStringToUTF8CString (pattern);
+    int rawResultLength;
+    guint64 * rawResult = frida_session_scan_module_for_code_pattern (handle, moduleNameUtf8, patternUtf8, &rawResultLength, &error);
+    g_free (patternUtf8);
+    g_free (moduleNameUtf8);
+    Marshal::ThrowGErrorIfSet (&error);
+
+    result = gcnew array<Address> (rawResultLength);
+    for (int i = 0; i != rawResultLength; i++)
+      result[i] = Address (rawResult[i]);
+
+    g_free (rawResult);
+
+    return result;
+  }
+
   void
   Session::InvokeFunction (Address address, String ^ arguments)
   {
