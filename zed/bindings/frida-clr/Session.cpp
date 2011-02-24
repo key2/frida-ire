@@ -17,6 +17,7 @@ namespace Frida
 {
   static void OnSessionClosed (FridaSession * session, gpointer user_data);
   static void OnSessionGLogMessage (FridaSession * session, guint64 timestamp, const gchar * domain, guint level, const gchar * message, gpointer user_data);
+  static void OnSessionGstPadStats (FridaSession * session, const ZedGstPadStats * stats, guint n_stats, gpointer user_data);
   static void OnScriptMessage (FridaScript * script, GVariant * msg, gpointer user_data);
 
   Session::Session (void * handle, Dispatcher ^ dispatcher)
@@ -27,9 +28,11 @@ namespace Frida
 
     onClosedHandler = gcnew EventHandler (this, &Session::OnClosed);
     onLogMessageHandler = gcnew LogMessageHandler (this, &Session::OnLogMessage);
+    onGstPadStatsHandler = gcnew GstPadStatsHandler (this, &Session::OnGstPadStats);
 
     g_signal_connect (handle, "closed", G_CALLBACK (OnSessionClosed), selfHandle);
     g_signal_connect (handle, "glog-message", G_CALLBACK (OnSessionGLogMessage), selfHandle);
+    g_signal_connect (handle, "gst-pad-stats", G_CALLBACK (OnSessionGstPadStats), selfHandle);
   }
 
   Session::~Session ()
@@ -159,6 +162,22 @@ namespace Frida
   }
 
   void
+  Session::EnableGstMonitor ()
+  {
+    GError * error = NULL;
+    frida_session_enable_gst_monitor (handle, &error);
+    Marshal::ThrowGErrorIfSet (&error);
+  }
+
+  void
+  Session::DisableGstMonitor ()
+  {
+    GError * error = NULL;
+    frida_session_disable_gst_monitor (handle, &error);
+    Marshal::ThrowGErrorIfSet (&error);
+  }
+
+  void
   Session::OnClosed (Object ^ sender, EventArgs ^ e)
   {
     if (dispatcher->CheckAccess ())
@@ -174,6 +193,15 @@ namespace Frida
       LogMessage (sender, e);
     else
       dispatcher->BeginInvoke (DispatcherPriority::Normal, onLogMessageHandler, sender, e);
+  }
+
+  void
+  Session::OnGstPadStats (Object ^ sender, GstPadStatsEventArgs ^ e)
+  {
+    if (dispatcher->CheckAccess ())
+      GstPadStats (sender, e);
+    else
+      dispatcher->BeginInvoke (DispatcherPriority::Normal, onGstPadStatsHandler, sender, e);
   }
 
   static void
@@ -197,6 +225,22 @@ namespace Frida
         static_cast<LogLevel> (level),
         Marshal::UTF8CStringToClrString (message));
     (*wrapper)->OnLogMessage (*wrapper, e);
+  }
+
+  static void
+  OnSessionGstPadStats (FridaSession * session, const ZedGstPadStats * stats, guint n_stats, gpointer user_data)
+  {
+    (void) session;
+
+    msclr::gcroot<Session ^> * wrapper = static_cast<msclr::gcroot<Session ^> *> (user_data);
+    array<GstPadStats ^> ^ entries = gcnew array<GstPadStats ^> (n_stats);
+    for (guint i = 0; i != n_stats; i++)
+    {
+      const ZedGstPadStats * s = &stats[i];
+      entries[i] = gcnew GstPadStats (Marshal::UTF8CStringToClrString (s->_pad_name), s->_buffers_per_second);
+    }
+    GstPadStatsEventArgs ^ e = gcnew GstPadStatsEventArgs (entries);
+    (*wrapper)->OnGstPadStats (*wrapper, e);
   }
 
   Script::Script (FridaScript * handle, Dispatcher ^ dispatcher)

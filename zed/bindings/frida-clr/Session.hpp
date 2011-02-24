@@ -16,6 +16,9 @@ namespace Frida
   public delegate void ScriptMessageHandler (Object ^ sender, ScriptMessageEventArgs ^ e);
   ref class LogMessageEventArgs;
   public delegate void LogMessageHandler (Object ^ sender, LogMessageEventArgs ^ e);
+  ref class GstPadStatsEventArgs;
+  ref class GstPadStats;
+  public delegate void GstPadStatsHandler (Object ^ sender, GstPadStatsEventArgs ^ e);
 
   public value struct Address
   {
@@ -46,6 +49,7 @@ namespace Frida
   public:
     event EventHandler ^ Closed;
     event LogMessageHandler ^ LogMessage;
+    event GstPadStatsHandler ^ GstPadStats;
 
     Session (void * handle, Dispatcher ^ dispatcher);
     ~Session ();
@@ -66,8 +70,12 @@ namespace Frida
     void EnableGMainWatchdog (double maxDuration);
     void DisableGMainWatchdog ();
 
+    void EnableGstMonitor ();
+    void DisableGstMonitor ();
+
     void OnClosed (Object ^ sender, EventArgs ^ e);
     void OnLogMessage (Object ^ sender, LogMessageEventArgs ^ e);
+    void OnGstPadStats (Object ^ sender, GstPadStatsEventArgs ^ e);
 
   private:
     FridaSession * handle;
@@ -76,6 +84,7 @@ namespace Frida
     Dispatcher ^ dispatcher;
     EventHandler ^ onClosedHandler;
     LogMessageHandler ^ onLogMessageHandler;
+    GstPadStatsHandler ^ onGstPadStatsHandler;
   };
 
   public ref class Script
@@ -135,5 +144,36 @@ namespace Frida
     String ^ domain;
     LogLevel level;
     String ^ message;
+  };
+
+  public ref class GstPadStatsEventArgs : public EventArgs
+  {
+  public:
+    property array <GstPadStats ^> ^ Entries { array <GstPadStats ^> ^ get () { return entries; } };
+
+    GstPadStatsEventArgs (array <GstPadStats ^> ^ entries)
+    {
+      this->entries = entries;
+    }
+
+  private:
+    array <GstPadStats ^> ^ entries;
+  };
+
+  public ref class GstPadStats
+  {
+  public:
+    property String ^ PadName { String ^ get () { return padName; } };
+    property double BuffersPerSecond { double get () { return buffersPerSecond; } };
+
+    GstPadStats (String ^ padName, double buffersPerSecond)
+    {
+      this->padName = padName;
+      this->buffersPerSecond = buffersPerSecond;
+    }
+
+  private:
+    String ^ padName;
+    double buffersPerSecond;
   };
 }
