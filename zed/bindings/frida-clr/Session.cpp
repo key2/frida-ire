@@ -237,7 +237,7 @@ namespace Frida
     for (guint i = 0; i != n_stats; i++)
     {
       const ZedGstPadStats * s = &stats[i];
-      entries[i] = gcnew GstPadStats (Marshal::UTF8CStringToClrString (s->_pad_name), s->_buffers_per_second);
+      entries[i] = gcnew GstPadStats (Marshal::UTF8CStringToClrString (s->_pad_name), s->_buffers_per_second, Marshal::UTF8CStringToClrString (s->_timing_history));
     }
     GstPadStatsEventArgs ^ e = gcnew GstPadStatsEventArgs (entries);
     (*wrapper)->OnGstPadStats (*wrapper, e);

@@ -165,15 +165,18 @@ namespace Frida
   public:
     property String ^ PadName { String ^ get () { return padName; } };
     property double BuffersPerSecond { double get () { return buffersPerSecond; } };
+    property String ^ TimingHistory { String ^ get () { return timingHistory; } }
 
-    GstPadStats (String ^ padName, double buffersPerSecond)
+    GstPadStats (String ^ padName, double buffersPerSecond, String ^ timingHistory)
     {
       this->padName = padName;
       this->buffersPerSecond = buffersPerSecond;
+      this->timingHistory = timingHistory;
     }
 
   private:
     String ^ padName;
     double buffersPerSecond;
+    String ^ timingHistory;
   };
 }
