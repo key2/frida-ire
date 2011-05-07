@@ -159,7 +159,11 @@ syntax: glob
 ./zed/lib/agent/Makefile
 ./zed/lib/agent/Makefile.in
 ./zed/lib/agent/agent.c
+./zed/lib/agent/glog-probe.c
+./zed/lib/agent/gmain-watchdog.c
+./zed/lib/agent/gst-monitor.c
 ./zed/lib/agent/script-engine.c
+./zed/lib/agent/stopwatch.c
 ./zed/lib/agent/zed-agent.h
 ./zed/lib/agent/zed-agent.vapi
 ./zed/lib/interfaces/*.la
