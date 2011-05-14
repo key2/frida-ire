@@ -130,12 +130,14 @@ namespace CloudSpy {
 					uint script_id = 0;
 					foreach (var func in yield agent_session.query_module_functions ("user32.dll")) {
 						if (func.name == "DrawTextExW") {
+							/*
 							var script = yield agent_session.compile_script (
 								"var msg = \"" + text + "\"\n" +
 								"arg1 = &msg\n" +
 								"arg2 = len (msg)\n");
 							yield agent_session.attach_script_to (script.sid, func.address);
 							script_id = script.sid.handle;
+							*/
 							break;
 						}
 					}
@@ -161,7 +163,7 @@ namespace CloudSpy {
 			protected override async void perform_operation () {
 				try {
 					var agent_session = yield parent.obtain_agent_session (pid);
-					yield agent_session.destroy_script (Zed.AgentScriptId (script_id));
+					yield agent_session.unload_script (Zed.AgentScriptId (script_id));
 					success (0);
 				} catch (Error e) {
 					failure (new IOError.FAILED (e.message));

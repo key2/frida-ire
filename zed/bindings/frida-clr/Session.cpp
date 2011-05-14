@@ -4,21 +4,12 @@
 
 using System::Windows::Threading::DispatcherPriority;
 
-G_BEGIN_DECLS
-
-struct _GVariant
-{
-  gpointer foo;
-};
-
-G_END_DECLS
-
 namespace Frida
 {
   static void OnSessionClosed (FridaSession * session, gpointer user_data);
   static void OnSessionGLogMessage (FridaSession * session, guint64 timestamp, const gchar * domain, guint level, const gchar * message, gpointer user_data);
   static void OnSessionGstPadStats (FridaSession * session, const ZedGstPadStats * stats, guint n_stats, gpointer user_data);
-  static void OnScriptMessage (FridaScript * script, GVariant * msg, gpointer user_data);
+  static void OnScriptMessage (FridaScript * script, const gchar * msg, gpointer user_data);
 
   Session::Session (void * handle, Dispatcher ^ dispatcher)
     : handle (FRIDA_SESSION (handle)),
@@ -51,13 +42,13 @@ namespace Frida
   }
 
   Script ^
-  Session::CompileScript (String ^ text)
+  Session::LoadScript (String ^ text)
   {
     FridaScript * scriptHandle;
 
     GError * error = NULL;
     gchar * textUtf8 = Marshal::ClrStringToUTF8CString (text);
-    scriptHandle = frida_session_compile_script (handle, textUtf8, &error);
+    scriptHandle = frida_session_load_script (handle, textUtf8, &error);
     g_free (textUtf8);
     Marshal::ThrowGErrorIfSet (&error);
 
@@ -264,18 +255,10 @@ namespace Frida
   }
 
   void
-  Script::Destroy ()
+  Script::Unload ()
   {
     GError * error = NULL;
-    frida_script_destroy (handle, &error);
-    Marshal::ThrowGErrorIfSet (&error);
-  }
-
-  void
-  Script::AttachTo (Address address)
-  {
-    GError * error = NULL;
-    frida_script_attach_to (handle, address.Value, &error);
+    frida_script_unload (handle, &error);
     Marshal::ThrowGErrorIfSet (&error);
   }
 
@@ -289,15 +272,13 @@ namespace Frida
   }
 
   static void
-  OnScriptMessage (FridaScript * script, GVariant * msg, gpointer user_data)
+  OnScriptMessage (FridaScript * script, const gchar * msg, gpointer user_data)
   {
     (void) script;
 
     msclr::gcroot<Script ^> * wrapper = static_cast<msclr::gcroot<Script ^> *> (user_data);
-    gchar * msg_str = g_variant_print (msg, false);
     ScriptMessageEventArgs ^ e = gcnew ScriptMessageEventArgs (
-        Marshal::UTF8CStringToClrString (msg_str));
-    g_free (msg_str);
+        Marshal::UTF8CStringToClrString (msg));
    (*wrapper)->OnMessage (*wrapper, e);
   }
 }

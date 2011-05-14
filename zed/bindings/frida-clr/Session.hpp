@@ -56,7 +56,7 @@ namespace Frida
 
     void Close ();
 
-    Script ^ CompileScript (String ^ text);
+    Script ^ LoadScript (String ^ text);
 
     Address ResolveModuleBase (String ^ moduleName);
     Address ResolveModuleExport (String ^ moduleName, String ^ symbolName);
@@ -95,9 +95,7 @@ namespace Frida
     Script (FridaScript * handle, Dispatcher ^ dispatcher);
     ~Script ();
 
-    void Destroy ();
-
-    void AttachTo (Address address);
+    void Unload ();
 
     void OnMessage (Object ^ sender, ScriptMessageEventArgs ^ e);
 
