@@ -183,6 +183,7 @@ syntax: glob
 ./zed/src/.libs
 ./zed/src/Makefile
 ./zed/src/Makefile.in
+./zed/src/cli/application.c
 ./zed/src/core/darwin/darwin-host-session.c
 ./zed/src/core/darwin/fruitjector.c
 ./zed/src/core/host-session-service.c
@@ -190,6 +191,8 @@ syntax: glob
 ./zed/src/core/system.c
 ./zed/src/core/tcp/tcp-host-session.c
 ./zed/src/zed
+./zed/src/zed-cli
+./zed/src/zed-cli.[ch]
 ./zed/src/zed-core.h
 ./zed/src/zed-server
 ./zed/src/zed-server.c
