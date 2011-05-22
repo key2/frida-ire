@@ -186,6 +186,9 @@ syntax: glob
 ./zed/src/cli/application.c
 ./zed/src/core/darwin/darwin-host-session.c
 ./zed/src/core/darwin/fruitjector.c
+./zed/src/core/fruity/fruity-client.c
+./zed/src/core/fruity/fruity-host-session.c
+./zed/src/core/fruity/fruity-property-list.c
 ./zed/src/core/host-session-service.c
 ./zed/src/core/linux/linjector.c
 ./zed/src/core/system.c
