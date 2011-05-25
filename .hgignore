@@ -211,12 +211,13 @@ syntax: glob
 ./zed/tests/inject-victim.c
 ./zed/tests/labrats/bin
 ./zed/tests/labrats/obj
+./zed/tests/main.c
 ./zed/tests/process.c
+./zed/tests/runner.c
 ./zed/tests/test-agent.c
 ./zed/tests/test-fruitjector.c
 ./zed/tests/test-host-session.c
 ./zed/tests/test-linjector.c
-./zed/tests/test-main.c
 ./zed/tests/test-system.c
 ./zed/tests/zed-tests
 ./zed/tests/zed-tests.h
