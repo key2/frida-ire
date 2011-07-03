@@ -149,7 +149,8 @@ syntax: glob
 ./zed/ext/libgum/tests/prof/Makefile.in
 ./zed/ext/libgum/vapi/Makefile
 ./zed/ext/libgum/vapi/Makefile.in
-./zed/ext/sdk
+./zed/ext/sdk-windows
+./zed/ext/toolchain
 ./zed/install-sh
 ./zed/lib/Makefile
 ./zed/lib/Makefile.in
