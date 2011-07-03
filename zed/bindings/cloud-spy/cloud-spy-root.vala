@@ -72,6 +72,9 @@ namespace CloudSpy {
 			if (agent_session == null) {
 				var agent_session_id = yield local_session.attach_to (pid);
 				agent_session = yield local_provider.obtain_agent_session (agent_session_id);
+				agent_session.message_from_script.connect ((sid, msg) => {
+					stdout.printf ("message from script %u:\n\t%s\n", sid.handle, msg);
+				});
 				agent_session_by_process_id[pid] = agent_session;
 			}
 
@@ -134,8 +137,8 @@ namespace CloudSpy {
 						"var drawTextImpl = Process.findModuleExportByName('user32.dll', 'DrawTextExW');" +
 						"Interceptor.attach(drawTextImpl, {" +
 						" onEnter: function(args) {" +
-						"	arg[1] = replacementTextUtf16;" +
-						"	arg[2] = replacementText.length;" +
+						"	args[1] = replacementTextUtf16;" +
+						"	args[2] = replacementText.length;" +
 						" }" +
 						"});");
 
