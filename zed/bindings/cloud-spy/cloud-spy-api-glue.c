@@ -22,7 +22,7 @@ static void cloud_spy_dispatcher_invocation_return_gerror (GDBusMethodInvocation
     cloud_spy_dispatcher_invocation_return_gerror(invocation, error)
 
 #pragma warning (push)
-#pragma warning (disable: 4090 4100 4133 4706)
+#pragma warning (disable: 4054 4100)
 #include "cloud-spy-api.c"
 #pragma warning (pop)
 

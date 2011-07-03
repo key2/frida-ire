@@ -82,7 +82,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>$(IntDir)pyfrida.def</ModuleDefinitionFile>
-      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;wocky.lib;crypto.lib;ssl.lib;libxml2.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\runtime\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
@@ -109,7 +109,7 @@ REM. &gt; "$(IntDir)pyfrida.stamp"
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>$(IntDir)pyfrida.def</ModuleDefinitionFile>
-      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;wocky.lib;crypto.lib;ssl.lib;libxml2.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\runtime\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
@@ -136,7 +136,7 @@ REM. &gt; "$(IntDir)pyfrida.stamp"
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>$(IntDir)pyfrida.def</ModuleDefinitionFile>
-      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;wocky.lib;crypto.lib;ssl.lib;libxml2.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\runtime\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>
@@ -163,7 +163,7 @@ REM. &gt; "$(IntDir)pyfrida.stamp"
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>$(IntDir)pyfrida.def</ModuleDefinitionFile>
-      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;wocky.lib;crypto.lib;ssl.lib;libxml2.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
+      <AdditionalDependencies>glib-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;gdi32.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>C:\Program Files (x86)\Python27\Lib\site-packages\gtk-2.0\runtime\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <CustomBuildStep>

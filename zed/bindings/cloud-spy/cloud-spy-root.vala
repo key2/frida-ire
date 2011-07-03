@@ -127,22 +127,19 @@ namespace CloudSpy {
 				try {
 					var agent_session = yield parent.obtain_agent_session (pid);
 
-					uint script_id = 0;
-					foreach (var func in yield agent_session.query_module_functions ("user32.dll")) {
-						if (func.name == "DrawTextExW") {
-							/*
-							var script = yield agent_session.compile_script (
-								"var msg = \"" + text + "\"\n" +
-								"arg1 = &msg\n" +
-								"arg2 = len (msg)\n");
-							yield agent_session.attach_script_to (script.sid, func.address);
-							script_id = script.sid.handle;
-							*/
-							break;
-						}
-					}
+					var script_id = yield agent_session.load_script (
+						"var replacementText = '" + text + "';" +
+						"var replacementTextUtf16 = Memory.allocUtf16String(replacementText);" +
+						"" +
+						"var drawTextImpl = Process.findModuleExportByName('user32.dll', 'DrawTextExW');" +
+						"Interceptor.attach(drawTextImpl, {" +
+						" onEnter: function(args) {" +
+						"	arg[1] = replacementTextUtf16;" +
+						"	arg[2] = replacementText.length;" +
+						" }" +
+						"});");
 
-					success (script_id);
+					success (script_id.handle);
 				} catch (Error e) {
 					failure (new IOError.FAILED (e.message));
 				}

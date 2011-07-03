@@ -90,7 +90,6 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>cloud-spy.def</ModuleDefinitionFile>
-      <AdditionalDependencies>glib-2.0.lib;gthread-2.0.lib;gmodule-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;dnsapi.lib;gdi32.lib;intl.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <Command>
@@ -120,7 +119,6 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>cloud-spy.def</ModuleDefinitionFile>
-      <AdditionalDependencies>glib-2.0.lib;gthread-2.0.lib;gmodule-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;dnsapi.lib;gdi32.lib;intl.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <Command>
@@ -150,7 +148,6 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>cloud-spy.def</ModuleDefinitionFile>
-      <AdditionalDependencies>glib-2.0.lib;gthread-2.0.lib;gmodule-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;dnsapi.lib;gdi32.lib;intl.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <Command>
@@ -180,7 +177,6 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <ModuleDefinitionFile>cloud-spy.def</ModuleDefinitionFile>
-      <AdditionalDependencies>glib-2.0.lib;gthread-2.0.lib;gmodule-2.0.lib;gobject-2.0.lib;gio-2.0.lib;gee-1.0.lib;advapi32.lib;dnsapi.lib;gdi32.lib;intl.lib;ole32.lib;psapi.lib;shell32.lib;shlwapi.lib;user32.lib;ws2_32.lib</AdditionalDependencies>
     </Link>
     <CustomBuildStep>
       <Command>
