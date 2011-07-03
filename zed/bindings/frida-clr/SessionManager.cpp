@@ -10,7 +10,7 @@ namespace Frida
 {
   SessionManager::SessionManager (Dispatcher ^ dispatcher)
     : dispatcher (dispatcher),
-      handle (frida_session_manager_new (static_cast<GMainContext *> (Application::GetMainContext ())))
+      handle (frida_session_manager_new (static_cast<GMainContext *> (Application::MainContext ())))
   {
   }
 
