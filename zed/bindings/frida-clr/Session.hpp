@@ -35,7 +35,7 @@ namespace Frida
 
     void Close ();
 
-    Script ^ LoadScript (String ^ text);
+    Script ^ CreateScript (String ^ source);
 
     void OnClosed (Object ^ sender, EventArgs ^ e);
 
@@ -55,6 +55,7 @@ namespace Frida
     Script (FridaScript * handle, Dispatcher ^ dispatcher);
     ~Script ();
 
+    void Load ();
     void Unload ();
 
     void OnMessage (Object ^ sender, ScriptMessageEventArgs ^ e);

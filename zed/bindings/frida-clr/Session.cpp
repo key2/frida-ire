@@ -36,14 +36,14 @@ namespace Frida
   }
 
   Script ^
-  Session::LoadScript (String ^ text)
+  Session::CreateScript (String ^ source)
   {
     FridaScript * scriptHandle;
 
     GError * error = NULL;
-    gchar * textUtf8 = Marshal::ClrStringToUTF8CString (text);
-    scriptHandle = frida_session_load_script (handle, textUtf8, &error);
-    g_free (textUtf8);
+    gchar * sourceUtf8 = Marshal::ClrStringToUTF8CString (source);
+    scriptHandle = frida_session_create_script (handle, sourceUtf8, &error);
+    g_free (sourceUtf8);
     Marshal::ThrowGErrorIfSet (&error);
 
     return gcnew Script (scriptHandle, dispatcher);
@@ -85,6 +85,14 @@ namespace Frida
 
     delete selfHandle;
     selfHandle = NULL;
+  }
+
+  void
+  Script::Load ()
+  {
+    GError * error = NULL;
+    frida_script_load (handle, &error);
+    Marshal::ThrowGErrorIfSet (&error);
   }
 
   void

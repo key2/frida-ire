@@ -130,7 +130,7 @@ namespace CloudSpy {
 				try {
 					var agent_session = yield parent.obtain_agent_session (pid);
 
-					var script_id = yield agent_session.load_script (
+					var script_id = yield agent_session.create_script (
 						"var replacementText = '" + text + "';" +
 						"var replacementTextUtf16 = Memory.allocUtf16String(replacementText);" +
 						"" +
@@ -141,6 +141,7 @@ namespace CloudSpy {
 						"	args[2] = replacementText.length;" +
 						" }" +
 						"});");
+					yield agent_session.load_script (script_id);
 
 					success (script_id.handle);
 				} catch (Error e) {
@@ -163,7 +164,7 @@ namespace CloudSpy {
 			protected override async void perform_operation () {
 				try {
 					var agent_session = yield parent.obtain_agent_session (pid);
-					yield agent_session.unload_script (Zed.AgentScriptId (script_id));
+					yield agent_session.destroy_script (Zed.AgentScriptId (script_id));
 					success (0);
 				} catch (Error e) {
 					failure (new IOError.FAILED (e.message));
