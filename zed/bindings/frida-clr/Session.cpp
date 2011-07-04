@@ -104,6 +104,16 @@ namespace Frida
   }
 
   void
+  Script::PostMessage (String ^ msg)
+  {
+    GError * error = NULL;
+    gchar * msgUtf8 = Marshal::ClrStringToUTF8CString (msg);
+    frida_script_post_message (handle, msgUtf8, &error);
+    g_free (msgUtf8);
+    Marshal::ThrowGErrorIfSet (&error);
+  }
+
+  void
   Script::OnMessage (Object ^ sender, ScriptMessageEventArgs ^ e)
   {
     if (dispatcher->CheckAccess ())

@@ -58,6 +58,8 @@ namespace Frida
     void Load ();
     void Unload ();
 
+    void PostMessage (String ^ msg);
+
     void OnMessage (Object ^ sender, ScriptMessageEventArgs ^ e);
 
   private:
