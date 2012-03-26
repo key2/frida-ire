@@ -35,17 +35,27 @@ syntax: glob
 ./zed/bin
 ./zed/build/frida-android
 ./zed/build/frida-ios
+<<<<<<< local
+./zed/build/frida-linux
+./zed/build/frida-osx*
+=======
 ./zed/build/frida-linux-*
 ./zed/build/frida-osx
+>>>>>>> other
 ./zed/build/frida-ps3
 ./zed/build/sdk-android
 ./zed/build/sdk-ios
-./zed/build/sdk-osx
+./zed/build/sdk-osx*
 ./zed/build/sdk-ps3
 ./zed/build/tmp-android
 ./zed/build/tmp-ios
+<<<<<<< local
+./zed/build/tmp-linux
+./zed/build/tmp-osx*
+=======
 ./zed/build/tmp-linux-*
 ./zed/build/tmp-osx
+>>>>>>> other
 ./zed/build/tmp-ps3
 ./zed/build/toolchain
 ./zed/config.guess
