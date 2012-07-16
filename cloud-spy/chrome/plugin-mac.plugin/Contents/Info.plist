@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>BRPL</string>
+	<key>CFBundleSignature</key>
+	<string>ErPl</string>
+	<key>CFBundleName</key>
+	<string>plugin-mac.plugin</string>
+	<key>CFBundleIdentifier</key>
+	<string>org.boblycat.frida.CloudSpyPlugin.plugin</string>
+	<key>CFBundleExecutable</key>
+	<string>libnpcsplugin.dylib</string>
+	<key>LSHasLocalizedDisplayName</key>
+	<false/>
+	<key>WebPluginName</key>
+	<string>CloudSpy Plug-in</string>
+	<key>WebPluginDescription</key>
+	<string>The CloudSpy Plugin allows you to use CloudSpy in your web browser.</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en_US</string>
+	<key>CFBundleVersion</key>
+	<string>1.0.0.0</string>
+	<key>CFBundleGetInfoString</key>
+	<string>1.0.0.0</string>
+	<key>IntrospectEnabled</key>
+	<string>true</string>
+	<key>WebPluginMIMETypes</key>
+	<dict>
+		<key>application/x-vnd-cloud-spy</key>
+		<dict>
+			<key>WebPluginTypeDescription</key>
+			<string>CloudSpy browser plugin</string>
+		</dict>
+	</dict>
+</dict>
+</plist>
