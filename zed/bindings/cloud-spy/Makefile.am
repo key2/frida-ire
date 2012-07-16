@@ -1,7 +1,6 @@
 SERVER := $(top_builddir)/src/zed-server
 
-lib_LTLIBRARIES = libcloud-spy-codegen.la libcloud-spy.la
-noinst_LTLIBRARIES = libcloud-spy-data.la
+lib_LTLIBRARIES = libcloud-spy-data.la libcloud-spy-codegen.la libcloud-spy.la
 
 libcloud_spy_codegen_la_SOURCES = \
 	cloud-spy-api.vala \
@@ -50,6 +49,10 @@ CLEANFILES = \
 	$(builddir)/cloud-spy-data.c
 libcloud_spy_data_la_SOURCES = \
 	$(builddir)/cloud-spy-data.c
+libcloud_spy_data_la_LDFLAGS = \
+	-export-symbols-regex "^__hack_to_force_build_order__$$"
+libcloud_spy_data_la_LIBTOOLFLAGS = \
+	--tag=disable-shared
 cloud-spy-data.c: $(SERVER)
 	$(AM_V_GEN) \
 		"$(top_builddir)/tools/resource-compiler" \
