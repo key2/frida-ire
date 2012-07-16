@@ -5,20 +5,26 @@
 #include <string.h>
 #include <gio/gio.h>
 
+static const gint cloud_spy_dispatcher_magic = 1337;
+
 typedef struct _CloudSpyDispatcherInvocation CloudSpyDispatcherInvocation;
 
 struct _CloudSpyDispatcherInvocation
 {
+  const gint * magic;
   GDBusMessage * call_message;
   GDBusMessage * reply_message;
   GError * error;
 };
 
+static void cloud_spy_dispatcher_unref (gpointer object);
 static GDBusMessage * cloud_spy_dispatcher_invocation_get_message (GDBusMethodInvocation * invocation);
 static GDBusConnection * cloud_spy_dispatcher_invocation_get_connection (GDBusMethodInvocation * invocation);
 static gboolean cloud_spy_dispatcher_connection_send_message (GDBusConnection * connection, GDBusMessage * message, GDBusSendMessageFlags flags, volatile guint32 * out_serial, GError ** error);
 static void cloud_spy_dispatcher_invocation_return_gerror (GDBusMethodInvocation * invocation, const GError * error);
 
+#define g_object_unref(obj) \
+    cloud_spy_dispatcher_unref (obj)
 #define g_dbus_method_invocation_get_message(invocation) \
     cloud_spy_dispatcher_invocation_get_message (invocation)
 #define g_dbus_method_invocation_get_connection(invocation) \
@@ -28,11 +34,16 @@ static void cloud_spy_dispatcher_invocation_return_gerror (GDBusMethodInvocation
 #define g_dbus_method_invocation_return_gerror(invocation, error) \
     cloud_spy_dispatcher_invocation_return_gerror (invocation, error)
 
-#pragma warning (push)
-#pragma warning (disable: 4054 4100)
+#ifdef _MSC_VER
+# pragma warning (push)
+# pragma warning (disable: 4054 4100)
+#endif
 #include "cloud-spy-api.c"
-#pragma warning (pop)
+#ifdef _MSC_VER
+# pragma warning (pop)
+#endif
 
+#undef g_object_unref
 #undef g_dbus_method_invocation_get_message
 #undef g_dbus_method_invocation_get_connection
 #undef g_dbus_connection_send_message
@@ -62,17 +73,21 @@ cloud_spy_dispatcher_do_invoke (CloudSpyDispatcher * self, GDBusMethodInfo * met
   CloudSpyDispatcherInvocation invocation = { 0, };
   GVariant * result = NULL;
 
+  invocation.magic = &cloud_spy_dispatcher_magic;
   invocation.call_message = g_dbus_message_new_method_call (NULL, "/org/boblycat/frida/Foo", "org.boblycat.Frida.Foo", method->name);
   g_dbus_message_set_serial (invocation.call_message, 1);
 
   self->dispatch_func (NULL, NULL, NULL, NULL, method->name, parameters, (GDBusMethodInvocation *) &invocation, &self->target_object);
 
-  g_propagate_error (error, invocation.error);
-
   if (invocation.reply_message != NULL)
   {
     result = g_variant_ref (g_dbus_message_get_body (invocation.reply_message));
     g_object_unref (invocation.reply_message);
+  }
+
+  if (invocation.error != NULL)
+  {
+    g_propagate_error (error, invocation.error);
   }
 
   g_object_unref (invocation.call_message);
@@ -127,6 +142,16 @@ type_mismatch:
     g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "argument type mismatch");
     return;
   }
+}
+
+static void
+cloud_spy_dispatcher_unref (gpointer object)
+{
+  CloudSpyDispatcherInvocation * invocation = object;
+  if (invocation->magic == &cloud_spy_dispatcher_magic)
+    ; /* do nothing */
+  else
+    g_object_unref (object);
 }
 
 static GDBusMessage *
