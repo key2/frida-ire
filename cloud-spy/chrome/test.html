@@ -5,7 +5,28 @@
 	</head>
 	<body>
 		<script type="text/javascript">
-			window.cspy = document.getElementById("cloud-spy");
+			var cspy = document.getElementById("cloud-spy");
+			cspy.addEventListener("message", function(pid, message) {
+				console.log("");
+				console.log("got:");
+				console.log(message.type);
+				console.log(message);
+			});
+			var source =
+				"var impl = Process.findModuleExportByName('libSystem.B.dylib', 'connect$UNIX2003');\n" +
+				"if (impl) {\n" +
+				"    Interceptor.attach(impl, {\n" +
+				"        onEnter: function(args) {\n" +
+				"            send({ event: 'connect', fd: Int32(args[0]) });\n" +
+				"        }\n" +
+				"    });\n" +
+				"}\n" +
+				"send({ event: 'result', impl: impl });\n";
+			cspy.attachTo(74613, source).done(function() {
+				console.log("attachTo() succeeded!");
+			}).fail(function(error) {
+				console.log("attachTo() failed: '" + error + "'");
+			});
 		</script>
 	</body>
 </html>

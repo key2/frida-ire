@@ -9,38 +9,45 @@ namespace CloudSpy {
 		private Gee.HashMap<uint, Zed.AgentSession> agent_session_by_process_id = new Gee.HashMap<uint, Zed.AgentSession> ();
 		private Gee.HashMap<uint, uint> script_id_by_process_id = new Gee.HashMap<uint, uint> ();
 
-		public string ping () {
-			return "pong";
+		public async string enumerate_processes () throws IOError {
+			var host_session = yield obtain_host_session ();
+
+			var builder = new Json.Builder ();
+			builder.begin_array ();
+			foreach (var pi in yield host_session.enumerate_processes ()) {
+				builder.begin_object ();
+				builder.set_member_name ("pid").add_int_value (pi.pid);
+				builder.set_member_name ("name").add_string_value (pi.name);
+				builder.end_object ();
+			}
+			builder.end_array ();
+			var generator = new Json.Generator ();
+			generator.set_root (builder.get_root ());
+			return generator.to_data (null);
 		}
 
-		public int attach_to (string process_name, string text) throws IOError {
-			var resolve = new ResolvePidTask (this, process_name);
-			uint pid = resolve.wait_for_completion ();
-			if (pid == 0)
-				throw new IOError.FAILED ("no matching process found");
+		public async void attach_to (uint pid, string source) throws IOError {
+			var agent_session = yield obtain_agent_session (pid);
+			var script_id = yield agent_session.create_script (source);
+			yield agent_session.load_script (script_id);
 
-			var attach = new AttachTask (this, pid, text);
-			uint script_id = attach.wait_for_completion ();
+			if (script_id_by_process_id.has_key (pid)) {
+				try {
+					yield detach_from (pid);
+				} catch (IOError e) {
+				}
+			}
 
-			script_id_by_process_id[pid] = script_id;
-
-			return (int) pid;
+			script_id_by_process_id[pid] = script_id.handle;
 		}
 
-		public int detach_from (string process_name) throws IOError {
-			var resolve = new ResolvePidTask (this, process_name);
-			uint pid = resolve.wait_for_completion ();
-			if (pid == 0)
-				throw new IOError.FAILED ("no matching process found");
+		public async void detach_from (uint pid) throws IOError {
+			uint script_id;
+			if (!script_id_by_process_id.unset (pid, out script_id))
+				throw new IOError.FAILED ("no script associated with pid %u".printf (pid));
 
-			var script_id = script_id_by_process_id[pid];
-			if (script_id == 0)
-				throw new IOError.FAILED ("no scripts associated with pid %u".printf (pid));
-
-			var detach = new DetachTask (this, pid, script_id);
-			detach.wait_for_completion ();
-
-			return (int) pid;
+			var agent_session = yield obtain_agent_session (pid);
+			yield agent_session.destroy_script (Zed.AgentScriptId (script_id));
 		}
 
 		protected async Zed.HostSession obtain_host_session () throws IOError {
@@ -80,141 +87,12 @@ namespace CloudSpy {
 				var agent_session_id = yield local_session.attach_to (pid);
 				agent_session = yield local_provider.obtain_agent_session (agent_session_id);
 				agent_session.message_from_script.connect ((sid, msg) => {
-					message ((int) pid, msg);
+					message (pid, msg);
 				});
 				agent_session_by_process_id[pid] = agent_session;
 			}
 
 			return agent_session;
-		}
-
-		private class ResolvePidTask : AsyncTask<uint> {
-			private string process_name;
-
-			public ResolvePidTask (Root parent, string process_name) {
-				base (parent);
-
-				this.process_name = process_name;
-			}
-
-			protected override async void perform_operation () {
-				try {
-					var host_session = yield parent.obtain_host_session ();
-
-					uint pid = 0, match_count = 0;
-
-					var spec = new PatternSpec (process_name);
-					foreach (var pi in yield host_session.enumerate_processes ()) {
-						if (spec.match_string (pi.name)) {
-							pid = pi.pid;
-							match_count++;
-						}
-					}
-
-					if (match_count > 1)
-						pid = 0;
-
-					success (pid);
-
-				} catch (Error e) {
-					failure (new IOError.FAILED (e.message));
-				}
-			}
-		}
-
-		private class AttachTask : AsyncTask<uint> {
-			private uint pid;
-			private string source;
-
-			public AttachTask (Root parent, uint pid, string source) {
-				base (parent);
-
-				this.pid = pid;
-				this.source = source;
-			}
-
-			protected override async void perform_operation () {
-				try {
-					var agent_session = yield parent.obtain_agent_session (pid);
-
-					var script_id = yield agent_session.create_script (source);
-					yield agent_session.load_script (script_id);
-
-					success (script_id.handle);
-				} catch (Error e) {
-					failure (new IOError.FAILED (e.message));
-				}
-			}
-		}
-
-		private class DetachTask : AsyncTask<uint> {
-			private uint pid;
-			private uint script_id;
-
-			public DetachTask (Root parent, uint pid, uint script_id) {
-				base (parent);
-
-				this.pid = pid;
-				this.script_id = script_id;
-			}
-
-			protected override async void perform_operation () {
-				try {
-					var agent_session = yield parent.obtain_agent_session (pid);
-					yield agent_session.destroy_script (Zed.AgentScriptId (script_id));
-					success (0);
-				} catch (Error e) {
-					failure (new IOError.FAILED (e.message));
-				}
-			}
-		}
-
-		private abstract class AsyncTask<T> : GLib.Object {
-			public Root parent {
-				get;
-				construct;
-			}
-
-			private T result;
-			private Error error;
-
-			private MainLoop loop;
-
-			public AsyncTask (Root parent) {
-				GLib.Object (parent: parent);
-
-				this.loop = new MainLoop (MainContext.get_thread_default (), true);
-
-				start ();
-			}
-
-			private void start () {
-				var idle = new IdleSource ();
-				idle.set_callback (() => {
-					perform_operation ();
-					return false;
-				});
-				idle.attach (MainContext.get_thread_default ());
-			}
-
-			public T wait_for_completion () throws IOError {
-				loop.run ();
-				if (error != null)
-					throw new IOError.FAILED (error.message);
-				return result;
-			}
-
-			public void success (T result) {
-				this.result = result;
-				loop.quit ();
-			}
-
-			public void failure (Error error) {
-				this.error = error;
-				loop.quit ();
-			}
-
-			protected abstract async void perform_operation ();
 		}
 
 		protected class Server {

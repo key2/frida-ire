@@ -1,5 +1,8 @@
 SERVER := $(top_builddir)/src/zed-server
 
+deploy: all
+	cp .libs/libcloud-spy.0.dylib ../../../cloud-spy/chrome/plugin-mac.plugin/Contents/MacOS/libnpcsplugin.dylib
+
 lib_LTLIBRARIES = libcloud-spy-data.la libcloud-spy-codegen.la libcloud-spy.la
 
 libcloud_spy_codegen_la_SOURCES = \
@@ -21,6 +24,7 @@ libcloud_spy_codegen_la_VALAFLAGS = \
 	--pkg=config \
 	--pkg=gee-1.0 \
 	--pkg=gio-2.0 \
+	--pkg=json-glib-1.0 \
 	--pkg=zed-core \
 	--pkg=zed-interfaces
 
@@ -29,6 +33,8 @@ libcloud_spy_la_SOURCES = \
 	cloud-spy-plugin.cpp \
 	cloud-spy-object.h \
 	cloud-spy-object.cpp \
+	cloud-spy-promise.h \
+	cloud-spy-promise.cpp \
 	cloud-spy-variant.h \
 	cloud-spy-variant.cpp \
 	cloud-spy-api-glue.c \
@@ -37,11 +43,13 @@ libcloud_spy_la_CFLAGS = \
 	-w
 libcloud_spy_la_LDFLAGS = \
 	-export-symbols-regex "^(NP_GetEntryPoints|NP_Initialize|NP_Shutdown|NP_GetMIMEDescription)$$" \
-	$(ZED_LDFLAGS)
+	$(ZED_LDFLAGS) \
+	$(CLOUD_SPY_LDFLAGS)
 libcloud_spy_la_LIBADD = \
 	$(top_builddir)/src/libzed-core.la \
 	$(builddir)/libcloud-spy-data.la \
-	$(ZED_LIBS)
+	$(ZED_LIBS) \
+	$(CLOUD_SPY_LIBS)
 libcloud_spy_la_LIBTOOLFLAGS = \
 	--tag=disable-static
 
@@ -64,4 +72,5 @@ AM_CPPFLAGS = \
 	-include config.h \
 	-I $(top_builddir)/src \
 	-I $(top_builddir)/lib/interfaces \
-	$(ZED_CFLAGS)
+	$(ZED_CFLAGS) \
+	$(CLOUD_SPY_CFLAGS)

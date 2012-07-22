@@ -2,6 +2,7 @@
 
 #include "cloud-spy.h"
 #include "cloud-spy-plugin.h"
+#include "cloud-spy-promise.h"
 #include "cloud-spy-variant.h"
 
 #include "npfunctions.h"
@@ -19,6 +20,7 @@ struct _CloudSpyObjectPrivate
   NPP npp;
   CloudSpyDispatcher * dispatcher;
   GCond * cond;
+  NPObject * json;
 };
 
 struct _CloudSpyNPObject
@@ -44,16 +46,17 @@ struct _CloudSpyClosure
 struct _CloudSpyClosureInvocation
 {
   CloudSpyClosure * closure;
-  NPVariant * args;
-  uint32_t arg_count;
+  GValueArray * args;
 };
 
 static void cloud_spy_object_constructed (GObject * object);
 static void cloud_spy_object_dispose (GObject * object);
 static void cloud_spy_object_finalize (GObject * object);
 
-static gboolean cloud_spy_object_do_invoke (gpointer data);
+static gboolean cloud_spy_object_do_invoke (gpointer user_data);
+static void cloud_spy_object_invoke_ready (GObject * source_object, GAsyncResult * res, gpointer user_data);
 static gboolean cloud_spy_object_do_get_property (gpointer data);
+static bool cloud_spy_object_add_event_listener (NPObject * npobj, const NPVariant * args, uint32_t arg_count, NPVariant * result);
 
 static GVariant * cloud_spy_object_argument_list_to_gvariant (const NPVariant * args, guint arg_count, GError ** err);
 static void cloud_spy_object_return_value_to_npvariant (CloudSpyObject * self, GVariant * retval, NPVariant * result);
@@ -112,6 +115,12 @@ cloud_spy_object_dispose (GObject * object)
     priv->dispatcher = NULL;
   }
 
+  if (priv->json != NULL)
+  {
+    cloud_spy_nsfuncs->releaseobject (priv->json);
+    priv->json = NULL;
+  }
+
   G_OBJECT_CLASS (cloud_spy_object_parent_class)->dispose (object);
 }
 
@@ -130,12 +139,25 @@ cloud_spy_object_allocate (NPP npp, NPClass * klass)
 {
   CloudSpyNPObjectClass * np_class = reinterpret_cast<CloudSpyNPObjectClass *> (klass);
   CloudSpyNPObject * obj;
-
-  (void) npp;
+  CloudSpyObjectPrivate * priv;
+  NPNetscapeFuncs * browser = cloud_spy_nsfuncs;
+  NPObject * window = NULL;
+  NPVariant variant;
+  NPError error;
+  gboolean success;
 
   obj = g_slice_new (CloudSpyNPObject);
   obj->g_object = CLOUD_SPY_OBJECT (g_object_new (np_class->g_type, NULL));
-  obj->g_object->priv->npp = npp;
+  priv = obj->g_object->priv;
+
+  priv->npp = npp;
+
+  error = browser->getvalue (npp, NPNVWindowNPObject, &window);
+  g_assert (error == NPERR_NO_ERROR);
+  success = browser->getproperty (npp, window, browser->getstringidentifier ("JSON"), &variant);
+  g_assert (success);
+  priv->json = NPVARIANT_TO_OBJECT (variant);
+  browser->releaseobject (window);
 
   return &obj->np_object;
 }
@@ -173,122 +195,118 @@ typedef struct _CloudSpyInvokeContext CloudSpyInvokeContext;
 
 struct _CloudSpyInvokeContext
 {
-  CloudSpyObject * self;
-
-  const gchar * function_name;
+  gchar * function_name;
   GVariant * arguments;
-  GVariant * result;
-  GError * error;
-
-  volatile gboolean completed;
+  NPObject * promise;
 };
 
 static bool
 cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * args, uint32_t arg_count, NPVariant * result)
 {
-  CloudSpyObject * self;
   const gchar * function_name;
-  CloudSpyInvokeContext ctx = { 0, };
+  CloudSpyObject * self;
+  GVariant * arguments = NULL;
+  GError * error = NULL;
+  CloudSpyInvokeContext * ctx;
   GSource * source;
 
-  self = reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object;
   function_name = static_cast<NPString *> (name)->UTF8Characters;
 
   if (strcmp (function_name, "addEventListener") == 0)
   {
-    const NPVariant * signal_name, * signal_handler;
-    gchar * signal_name_str;
-    guint signal_id;
-
-    if (arg_count != 2)
-    {
-      cloud_spy_nsfuncs->setexception (npobj, "addEventListener requires two arguments");
-      return true;
-    }
-
-    signal_name = &args[0];
-    if (signal_name->type != NPVariantType_String)
-    {
-      cloud_spy_nsfuncs->setexception (npobj, "event name must be a string");
-      return true;
-    }
-
-    signal_handler = &args[1];
-    if (signal_handler->type != NPVariantType_Object)
-    {
-      cloud_spy_nsfuncs->setexception (npobj, "event handler must be a function");
-      return true;
-    }
-
-    signal_name_str = (gchar *) g_malloc (signal_name->value.stringValue.UTF8Length + 1);
-    memcpy (signal_name_str, signal_name->value.stringValue.UTF8Characters, signal_name->value.stringValue.UTF8Length);
-    signal_name_str[signal_name->value.stringValue.UTF8Length] = '\0';
-    signal_id = g_signal_lookup (signal_name_str, G_OBJECT_TYPE (reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object));
-    g_free (signal_name_str), signal_name_str = NULL;
-
-    if (signal_id == 0)
-    {
-      cloud_spy_nsfuncs->setexception (npobj, "invalid event name");
-      return true;
-    }
-
-    g_signal_connect_closure_by_id (self, signal_id, 0,
-        cloud_spy_closure_new (reinterpret_cast<CloudSpyNPObject *> (npobj), signal_handler->value.objectValue), TRUE);
-    return true;
+    return cloud_spy_object_add_event_listener (npobj, args, arg_count, result);
   }
 
-  ctx.self = self;
+  self = reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object;
 
-  ctx.function_name = function_name;
-  ctx.arguments = cloud_spy_object_argument_list_to_gvariant (args, arg_count, &ctx.error);
-  if (ctx.error != NULL)
+  arguments = cloud_spy_object_argument_list_to_gvariant (args, arg_count, &error);
+  if (error != NULL)
     goto invoke_failed;
+
+  cloud_spy_dispatcher_validate_invoke (self->priv->dispatcher, function_name, arguments, &error);
+  if (error != NULL)
+    goto invoke_failed;
+
+  ctx = g_slice_new0 (CloudSpyInvokeContext);
+  ctx->function_name = g_strdup (function_name);
+  ctx->arguments = arguments;
+  cloud_spy_nsfuncs->retainobject (npobj);
+  ctx->promise = cloud_spy_promise_new (self->priv->npp, npobj, cloud_spy_npobject_release);
+  cloud_spy_nsfuncs->retainobject (ctx->promise);
 
   source = g_idle_source_new ();
   g_source_set_priority (source, G_PRIORITY_HIGH);
-  g_source_set_callback (source, cloud_spy_object_do_invoke, &ctx, NULL);
+  g_source_set_callback (source, cloud_spy_object_do_invoke, ctx, NULL);
   g_source_attach (source, cloud_spy_main_context);
   g_source_unref (source);
 
-  G_LOCK (cloud_spy_object);
-  while (!ctx.completed)
-    g_cond_wait (ctx.self->priv->cond, g_static_mutex_get_mutex (&G_LOCK_NAME (cloud_spy_object)));
-  G_UNLOCK (cloud_spy_object);
-
-  if (ctx.error != NULL)
-    goto invoke_failed;
-
-  cloud_spy_object_return_value_to_npvariant (ctx.self, ctx.result, result);
-
-  if (ctx.arguments != NULL)
-    g_variant_unref (ctx.arguments);
+  OBJECT_TO_NPVARIANT (ctx->promise, *result);
 
   return true;
 
 invoke_failed:
   {
-    if (ctx.arguments != NULL)
-      g_variant_unref (ctx.arguments);
-    cloud_spy_nsfuncs->setexception (npobj, ctx.error->message);
-    g_clear_error (&ctx.error);
+    if (arguments != NULL)
+      g_variant_unref (arguments);
+    cloud_spy_nsfuncs->setexception (npobj, error->message);
+    g_clear_error (&error);
     return true;
   }
 }
 
 static gboolean
-cloud_spy_object_do_invoke (gpointer data)
+cloud_spy_object_do_invoke (gpointer user_data)
 {
-  CloudSpyInvokeContext * ctx = static_cast<CloudSpyInvokeContext *> (data);
-  CloudSpyObjectPrivate * priv = ctx->self->priv;
+  CloudSpyInvokeContext * ctx = static_cast<CloudSpyInvokeContext *> (user_data);
+  CloudSpyPromise * promise = reinterpret_cast<CloudSpyPromise *> (ctx->promise);
+  CloudSpyObject * self = static_cast<CloudSpyNPObject *> (promise->user_data)->g_object;
 
-  ctx->result = cloud_spy_dispatcher_invoke (priv->dispatcher, ctx->function_name, ctx->arguments, &ctx->error);
-
-  G_LOCK (cloud_spy_object);
-  ctx->completed = TRUE;
-  g_cond_signal (priv->cond);
-  G_UNLOCK (cloud_spy_object);
+  cloud_spy_dispatcher_invoke (self->priv->dispatcher, ctx->function_name, ctx->arguments,
+      cloud_spy_object_invoke_ready, ctx);
 
   return FALSE;
+}
+
+static void
+cloud_spy_object_invoke_ready (GObject * source_object, GAsyncResult * res, gpointer user_data)
+{
+  CloudSpyInvokeContext * ctx = static_cast<CloudSpyInvokeContext *> (user_data);
+  CloudSpyPromise * promise = reinterpret_cast<CloudSpyPromise *> (ctx->promise);
+  CloudSpyObject * self = static_cast<CloudSpyNPObject *> (promise->user_data)->g_object;
+  GVariant * retval;
+  GError * error = NULL;
+
+  retval = cloud_spy_dispatcher_invoke_finish (self->priv->dispatcher, res, &error);
+  if (error == NULL)
+  {
+    if (retval == NULL)
+    {
+      cloud_spy_promise_resolve (promise, NULL, 0);
+    }
+    else
+    {
+      NPVariant val;
+      cloud_spy_object_return_value_to_npvariant (self, retval, &val);
+      cloud_spy_promise_resolve (promise, &val, 1);
+      cloud_spy_nsfuncs->releasevariantvalue (&val);
+    }
+
+    if (retval != NULL)
+      g_variant_unref (retval);
+  }
+  else
+  {
+    NPVariant message;
+
+    STRINGZ_TO_NPVARIANT (error->message, message);
+    cloud_spy_promise_reject (promise, &message, 1);
+  }
+
+  g_free (ctx->function_name);
+  if (ctx->arguments != NULL)
+    g_variant_unref (ctx->arguments);
+  cloud_spy_nsfuncs->releaseobject (ctx->promise);
+  g_slice_free (CloudSpyInvokeContext, ctx);
 }
 
 static bool
@@ -388,14 +406,57 @@ cloud_spy_object_do_get_property (gpointer data)
   return FALSE;
 }
 
+static bool
+cloud_spy_object_add_event_listener (NPObject * npobj, const NPVariant * args, uint32_t arg_count, NPVariant * result)
+{
+  const NPVariant * signal_name, * signal_handler;
+  gchar * signal_name_str;
+  guint signal_id;
+
+  if (arg_count != 2)
+  {
+    cloud_spy_nsfuncs->setexception (npobj, "addEventListener requires two arguments");
+    return true;
+  }
+
+  signal_name = &args[0];
+  if (signal_name->type != NPVariantType_String)
+  {
+    cloud_spy_nsfuncs->setexception (npobj, "event name must be a string");
+    return true;
+  }
+
+  signal_handler = &args[1];
+  if (signal_handler->type != NPVariantType_Object)
+  {
+    cloud_spy_nsfuncs->setexception (npobj, "event handler must be a function");
+    return true;
+  }
+
+  signal_name_str = (gchar *) g_malloc (signal_name->value.stringValue.UTF8Length + 1);
+  memcpy (signal_name_str, signal_name->value.stringValue.UTF8Characters, signal_name->value.stringValue.UTF8Length);
+  signal_name_str[signal_name->value.stringValue.UTF8Length] = '\0';
+  signal_id = g_signal_lookup (signal_name_str, G_OBJECT_TYPE (reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object));
+  g_free (signal_name_str), signal_name_str = NULL;
+
+  if (signal_id == 0)
+  {
+    cloud_spy_nsfuncs->setexception (npobj, "invalid event name");
+    return true;
+  }
+
+  g_signal_connect_closure_by_id (reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object, signal_id, 0,
+      cloud_spy_closure_new (reinterpret_cast<CloudSpyNPObject *> (npobj), signal_handler->value.objectValue), TRUE);
+
+  VOID_TO_NPVARIANT (*result);
+  return true;
+}
+
 static GVariant *
 cloud_spy_object_argument_list_to_gvariant (const NPVariant * args, guint arg_count, GError ** err)
 {
   GVariantBuilder builder;
   guint i;
-
-  if (arg_count == 0)
-    return NULL;
 
   g_variant_builder_init (&builder, G_VARIANT_TYPE_TUPLE);
 
@@ -470,15 +531,32 @@ cloud_spy_object_gvariant_to_npvariant (CloudSpyObject * self, GVariant * retval
   }
 
   if (g_variant_type_equal (type, G_VARIANT_TYPE_BOOLEAN))
+  {
     BOOLEAN_TO_NPVARIANT (g_variant_get_boolean (retval), *result);
+  }
   else if (g_variant_type_equal (type, G_VARIANT_TYPE_INT32))
+  {
     INT32_TO_NPVARIANT (g_variant_get_int32 (retval), *result);
+  }
+  else if (g_variant_type_equal (type, G_VARIANT_TYPE_UINT32))
+  {
+    INT32_TO_NPVARIANT (g_variant_get_uint32 (retval), *result);
+  }
   else if (g_variant_type_equal (type, G_VARIANT_TYPE_DOUBLE))
+  {
     DOUBLE_TO_NPVARIANT (g_variant_get_double (retval), *result);
+  }
   else if (g_variant_type_equal (type, G_VARIANT_TYPE_STRING))
-    cloud_spy_init_npvariant_with_string (result, g_variant_get_string (retval, NULL));
+  {
+    NPVariant variant;
+    STRINGZ_TO_NPVARIANT (g_variant_get_string (retval, NULL), variant);
+    VOID_TO_NPVARIANT (*result);
+    cloud_spy_nsfuncs->invoke (self->priv->npp, self->priv->json, cloud_spy_nsfuncs->getstringidentifier ("parse"), &variant, 1, result);
+  }
   else
+  {
     g_assert_not_reached ();
+  }
 }
 
 static gboolean
@@ -492,6 +570,9 @@ cloud_spy_object_gvalue_to_npvariant (CloudSpyObject * self, const GValue * gval
     case G_TYPE_INT:
       INT32_TO_NPVARIANT (g_value_get_int (gvalue), *result);
       break;
+    case G_TYPE_UINT:
+      INT32_TO_NPVARIANT (g_value_get_uint (gvalue), *result);
+      break;
     case G_TYPE_FLOAT:
       DOUBLE_TO_NPVARIANT ((double) g_value_get_float (gvalue), *result);
       break;
@@ -499,11 +580,13 @@ cloud_spy_object_gvalue_to_npvariant (CloudSpyObject * self, const GValue * gval
       DOUBLE_TO_NPVARIANT (g_value_get_double (gvalue), *result);
       break;
     case G_TYPE_STRING:
-    {
-      cloud_spy_init_npvariant_with_string (result, g_value_get_string (gvalue));
+      NPVariant variant;
+      STRINGZ_TO_NPVARIANT (g_value_get_string (gvalue), variant);
+      VOID_TO_NPVARIANT (*result);
+      cloud_spy_nsfuncs->invoke (self->priv->npp, self->priv->json, cloud_spy_nsfuncs->getstringidentifier ("parse"), &variant, 1, result);
       break;
-    }
     default:
+      VOID_TO_NPVARIANT (*result);
       return FALSE;
   }
 
@@ -600,14 +683,32 @@ cloud_spy_closure_marshal (GClosure * closure, GValue * return_gvalue, guint n_p
     gpointer invocation_hint, gpointer marshal_data)
 {
   CloudSpyClosure * self = reinterpret_cast<CloudSpyClosure *> (closure);
-  NPVariant * args;
+  CloudSpyClosureInvocation * invocation;
   guint i;
-  gboolean success = TRUE;
 
-  args = g_new0 (NPVariant, n_param_values - 1);
-  for (i = 1; i != n_param_values; i++)
+  invocation = g_slice_new (CloudSpyClosureInvocation);
+  invocation->closure = self;
+  invocation->args = g_value_array_new (n_param_values);
+  for (i = 0; i != n_param_values; i++)
+    g_value_array_append (invocation->args, &param_values[i]);
+
+  cloud_spy_nsfuncs->pluginthreadasynccall (self->object->g_object->priv->npp, cloud_spy_closure_invoke, invocation);
+}
+
+static void
+cloud_spy_closure_invoke (void * data)
+{
+  CloudSpyClosureInvocation * invocation = static_cast<CloudSpyClosureInvocation *> (data);
+  CloudSpyClosure * self = invocation->closure;
+  NPVariant * args;
+  guint arg_count = invocation->args->n_values - 1;
+  gboolean success = TRUE;
+  guint i;
+
+  args = static_cast<NPVariant *> (g_alloca (arg_count * sizeof (NPVariant)));
+  for (i = 1; i != invocation->args->n_values; i++)
   {
-    if (!cloud_spy_object_gvalue_to_npvariant (self->object->g_object, &param_values[i], &args[i - 1]))
+    if (!cloud_spy_object_gvalue_to_npvariant (self->object->g_object, &invocation->args->values[i], &args[i - 1]))
     {
       success = FALSE;
       g_debug ("failed to convert argument %u to a variant", i - 1);
@@ -616,37 +717,22 @@ cloud_spy_closure_marshal (GClosure * closure, GValue * return_gvalue, guint n_p
 
   if (success)
   {
-    CloudSpyClosureInvocation * invocation;
+    NPVariant result;
 
-    invocation = g_slice_new (CloudSpyClosureInvocation);
-    invocation->closure = self;
-    invocation->args = args;
-    invocation->arg_count = n_param_values - 1;
-    cloud_spy_nsfuncs->pluginthreadasynccall (self->object->g_object->priv->npp, cloud_spy_closure_invoke, invocation);
-  }
-  else
-  {
-    g_free (args);
-  }
-}
-
-static void
-cloud_spy_closure_invoke (void * data)
-{
-  CloudSpyClosureInvocation * invocation = static_cast<CloudSpyClosureInvocation *> (data);
-  CloudSpyClosure * self = invocation->closure;
-  NPVariant result;
-
-  if (cloud_spy_nsfuncs->invokeDefault (self->object->g_object->priv->npp, self->callback,
-      invocation->args, invocation->arg_count, &result))
-  {
-    cloud_spy_nsfuncs->releasevariantvalue (&result);
-  }
-  else
-  {
-    g_debug ("closure invocation failed");
+    VOID_TO_NPVARIANT (result);
+    if (cloud_spy_nsfuncs->invokeDefault (self->object->g_object->priv->npp, self->callback, args, arg_count, &result))
+    {
+      cloud_spy_nsfuncs->releasevariantvalue (&result);
+    }
+    else
+    {
+      g_debug ("closure invocation failed");
+    }
   }
 
-  g_free (invocation->args);
+  for (i = 0; i != arg_count; i++)
+    cloud_spy_nsfuncs->releasevariantvalue (&args[i]);
+
+  g_value_array_free (invocation->args);
   g_slice_free (CloudSpyClosureInvocation, invocation);
 }

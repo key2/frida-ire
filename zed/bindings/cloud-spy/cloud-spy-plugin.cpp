@@ -38,6 +38,7 @@ cloud_spy_log (const gchar * log_domain, GLogLevelFlags log_level, const gchar *
   console = NPVARIANT_TO_OBJECT (variant);
 
   STRINGZ_TO_NPVARIANT (message, variant);
+  VOID_TO_NPVARIANT (result);
   if (!browser->invoke (instance, console, browser->getstringidentifier ("log"), &variant, 1, &result))
     goto beach;
   browser->releasevariantvalue (&result);
@@ -281,4 +282,28 @@ cloud_spy_init_npvariant_with_string (NPVariant * var, const gchar * str)
   NPUTF8 * str_copy = static_cast<NPUTF8 *> (cloud_spy_nsfuncs->memalloc (len));
   memcpy (str_copy, str, len);
   STRINGN_TO_NPVARIANT (str_copy, len, *var);
+}
+
+void
+cloud_spy_init_npvariant_with_other (NPVariant * var, const NPVariant * other)
+{
+  memcpy (var, other, sizeof (NPVariant));
+
+  if (other->type == NPVariantType_String)
+  {
+    const NPString * from = &NPVARIANT_TO_STRING (*other);
+    NPString * to = &NPVARIANT_TO_STRING (*var);
+    to->UTF8Characters = static_cast<NPUTF8 *> (cloud_spy_nsfuncs->memalloc (from->UTF8Length));
+    memcpy (const_cast<NPUTF8 *> (to->UTF8Characters), from->UTF8Characters, from->UTF8Length);
+  }
+  else if (other->type == NPVariantType_Object)
+  {
+    cloud_spy_nsfuncs->retainobject (NPVARIANT_TO_OBJECT (*var));
+  }
+}
+
+void
+cloud_spy_npobject_release (gpointer npobject)
+{
+  cloud_spy_nsfuncs->releaseobject (static_cast<NPObject *> (npobject));
 }

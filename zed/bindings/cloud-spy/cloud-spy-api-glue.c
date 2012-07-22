@@ -1,3 +1,5 @@
+#include "cloud-spy-plugin.h"
+
 #include <glib.h>
 #include <glib-object.h>
 #include <cloud-spy-object.h>
@@ -12,12 +14,23 @@ typedef struct _CloudSpyDispatcherInvocation CloudSpyDispatcherInvocation;
 struct _CloudSpyDispatcherInvocation
 {
   const gint * magic;
+
+  volatile gint ref_count;
+
+  GDBusMethodInfo * method;
+  GVariant * parameters;
+  GSimpleAsyncResult * res;
+
   GDBusMessage * call_message;
-  GDBusMessage * reply_message;
-  GError * error;
 };
 
 static void cloud_spy_dispatcher_unref (gpointer object);
+
+static CloudSpyDispatcherInvocation * cloud_spy_dispatcher_invocation_new (GDBusMethodInfo * method, GVariant * parameters, GSimpleAsyncResult * res);
+static void cloud_spy_dispatcher_invocation_ref (CloudSpyDispatcherInvocation * invocation);
+static void cloud_spy_dispatcher_invocation_unref (CloudSpyDispatcherInvocation * invocation);
+static void cloud_spy_dispatcher_invocation_perform (CloudSpyDispatcherInvocation * self);
+
 static GDBusMessage * cloud_spy_dispatcher_invocation_get_message (GDBusMethodInvocation * invocation);
 static GDBusConnection * cloud_spy_dispatcher_invocation_get_connection (GDBusMethodInvocation * invocation);
 static gboolean cloud_spy_dispatcher_connection_send_message (GDBusConnection * connection, GDBusMessage * message, GDBusSendMessageFlags flags, volatile guint32 * out_serial, GError ** error);
@@ -67,81 +80,27 @@ cloud_spy_dispatcher_init_with_object (CloudSpyDispatcher * self, CloudSpyObject
     g_assert_not_reached ();
 }
 
-GVariant *
-cloud_spy_dispatcher_do_invoke (CloudSpyDispatcher * self, GDBusMethodInfo * method, GVariant * parameters, GError ** error)
+static void
+cloud_spy_dispatcher_do_invoke (CloudSpyDispatcher * self, GDBusMethodInfo * method, GVariant * parameters,
+    GAsyncReadyCallback callback, gpointer user_data)
 {
-  CloudSpyDispatcherInvocation invocation = { 0, };
-  GVariant * result = NULL;
+  CloudSpyDispatcherInvocation * invocation;
 
-  invocation.magic = &cloud_spy_dispatcher_magic;
-  invocation.call_message = g_dbus_message_new_method_call (NULL, "/org/boblycat/frida/Foo", "org.boblycat.Frida.Foo", method->name);
-  g_dbus_message_set_serial (invocation.call_message, 1);
-
-  self->dispatch_func (NULL, NULL, NULL, NULL, method->name, parameters, (GDBusMethodInvocation *) &invocation, &self->target_object);
-
-  if (invocation.reply_message != NULL)
-  {
-    result = g_variant_ref (g_dbus_message_get_body (invocation.reply_message));
-    g_object_unref (invocation.reply_message);
-  }
-
-  if (invocation.error != NULL)
-  {
-    g_propagate_error (error, invocation.error);
-  }
-
-  g_object_unref (invocation.call_message);
-
-  return result;
+  invocation = cloud_spy_dispatcher_invocation_new (method, parameters,
+      g_simple_async_result_new (self, callback, user_data, cloud_spy_dispatcher_do_invoke));
+  cloud_spy_dispatcher_invocation_perform (invocation);
+  cloud_spy_dispatcher_invocation_unref (invocation);
 }
 
-void
-cloud_spy_dispatcher_validate_argument_list (CloudSpyDispatcher * self, GVariant * args, GDBusMethodInfo * method, GError ** error)
+static GVariant *
+cloud_spy_dispatcher_do_invoke_finish (CloudSpyDispatcher * self, GAsyncResult * res, GError ** error)
 {
-  guint actual_arg_count, expected_arg_count;
-  GDBusArgInfo ** ai;
-  guint i;
+  GSimpleAsyncResult * ar = G_SIMPLE_ASYNC_RESULT (res);
 
-  (void) self;
+  if (g_simple_async_result_propagate_error (ar, error))
+    return NULL;
 
-  actual_arg_count = (args != NULL) ? g_variant_n_children (args) : 0;
-  expected_arg_count = 0;
-  for (ai = method->in_args; *ai != NULL; ai++)
-    expected_arg_count++;
-  if (actual_arg_count != expected_arg_count)
-    goto count_mismatch;
-
-  for (i = 0; i != expected_arg_count; i++)
-  {
-    GVariant * arg;
-    const GVariantType * actual_type;
-    GVariantType * expected_type;
-    gboolean types_are_equal;
-
-    arg = g_variant_get_child_value (args, i);
-    actual_type = g_variant_get_type (arg);
-    expected_type = g_variant_type_new (method->in_args[i]->signature);
-    types_are_equal = g_variant_type_equal (actual_type, expected_type);
-    g_variant_type_free (expected_type);
-    g_variant_unref (arg);
-
-    if (!types_are_equal)
-      goto type_mismatch;
-  }
-
-  return;
-
-  /* ERRORS */
-count_mismatch:
-  {
-    g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "argument count mismatch");
-    return;
-  }
-type_mismatch:
-  {
-    g_set_error (error, G_IO_ERROR, G_IO_ERROR_INVALID_ARGUMENT, "argument type mismatch");
-    return;
-  }
+  return g_variant_ref (g_simple_async_result_get_op_res_gpointer (ar));
 }
 
 static void
@@ -149,9 +108,65 @@ cloud_spy_dispatcher_unref (gpointer object)
 {
   CloudSpyDispatcherInvocation * invocation = object;
   if (invocation->magic == &cloud_spy_dispatcher_magic)
-    ; /* do nothing */
+    cloud_spy_dispatcher_invocation_unref (invocation);
   else
     g_object_unref (object);
+}
+
+static CloudSpyDispatcherInvocation *
+cloud_spy_dispatcher_invocation_new (GDBusMethodInfo * method, GVariant * parameters, GSimpleAsyncResult * res)
+{
+  CloudSpyDispatcherInvocation * invocation;
+  GSource * source;
+
+  invocation = g_slice_new (CloudSpyDispatcherInvocation);
+  invocation->magic = &cloud_spy_dispatcher_magic;
+
+  invocation->ref_count = 1;
+
+  invocation->method = g_dbus_method_info_ref (method);
+  invocation->parameters = g_variant_ref (parameters);
+  invocation->res = res;
+
+  invocation->call_message = g_dbus_message_new_method_call (NULL, "/org/boblycat/frida/Foo", "org.boblycat.Frida.Foo", method->name);
+  g_dbus_message_set_serial (invocation->call_message, 1);
+
+  return invocation;
+}
+
+static void
+cloud_spy_dispatcher_invocation_ref (CloudSpyDispatcherInvocation * invocation)
+{
+  g_atomic_int_inc (&invocation->ref_count);
+}
+
+static void
+cloud_spy_dispatcher_invocation_unref (CloudSpyDispatcherInvocation * invocation)
+{
+  if (g_atomic_int_dec_and_test (&invocation->ref_count))
+  {
+    g_dbus_method_info_unref (invocation->method);
+    g_variant_unref (invocation->parameters);
+    g_object_unref (invocation->res);
+
+    g_object_unref (invocation->call_message);
+
+    g_slice_free (CloudSpyDispatcherInvocation, invocation);
+  }
+}
+
+static void
+cloud_spy_dispatcher_invocation_perform (CloudSpyDispatcherInvocation * self)
+{
+  CloudSpyDispatcher * dispatcher;
+
+  dispatcher = CLOUD_SPY_DISPATCHER (g_async_result_get_source_object (G_ASYNC_RESULT (self->res)));
+
+  cloud_spy_dispatcher_invocation_ref (self);
+  dispatcher->dispatch_func (NULL, NULL, NULL, NULL, self->method->name, self->parameters,
+      (GDBusMethodInvocation *) self, &dispatcher->target_object);
+
+  g_object_unref (dispatcher);
 }
 
 static GDBusMessage *
@@ -169,12 +184,16 @@ cloud_spy_dispatcher_invocation_get_connection (GDBusMethodInvocation * invocati
 static gboolean
 cloud_spy_dispatcher_connection_send_message (GDBusConnection * connection, GDBusMessage * message, GDBusSendMessageFlags flags, volatile guint32 * out_serial, GError ** error)
 {
+  CloudSpyDispatcherInvocation * self = (CloudSpyDispatcherInvocation *) connection;
+  GVariant * result;
+
   (void) flags;
   (void) out_serial;
   (void) error;
 
-  g_object_ref (message);
-  ((CloudSpyDispatcherInvocation *) connection)->reply_message = message;
+  result = g_variant_ref (g_dbus_message_get_body (message));
+  g_simple_async_result_set_op_res_gpointer (self->res, result, g_variant_unref);
+  g_simple_async_result_complete (self->res);
 
   return TRUE;
 }
@@ -182,5 +201,10 @@ cloud_spy_dispatcher_connection_send_message (GDBusConnection * connection, GDBu
 static void
 cloud_spy_dispatcher_invocation_return_gerror (GDBusMethodInvocation * invocation, const GError * error)
 {
-  ((CloudSpyDispatcherInvocation *) invocation)->error = (GError *) error;
+  CloudSpyDispatcherInvocation * self = (CloudSpyDispatcherInvocation *) invocation;
+
+  g_simple_async_result_take_error (self->res, error);
+  g_simple_async_result_complete (self->res);
+
+  cloud_spy_dispatcher_invocation_unref (self);
 }
