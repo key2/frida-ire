@@ -54,9 +54,13 @@ libcloud_spy_la_LIBTOOLFLAGS = \
 	--tag=disable-static
 
 CLEANFILES = \
-	$(builddir)/cloud-spy-data.c
+	$(builddir)/cloud-spy-data.vapi \
+	$(builddir)/cloud-spy-data.h \
+	$(builddir)/cloud-spy-data.c \
+	$(builddir)/cloud-spy-data-blob.S
 libcloud_spy_data_la_SOURCES = \
-	$(builddir)/cloud-spy-data.c
+	$(builddir)/cloud-spy-data.c \
+	$(builddir)/cloud-spy-data-blob.S
 libcloud_spy_data_la_LDFLAGS = \
 	-export-symbols-regex "^__hack_to_force_build_order__$$"
 libcloud_spy_data_la_LIBTOOLFLAGS = \
@@ -64,6 +68,7 @@ libcloud_spy_data_la_LIBTOOLFLAGS = \
 cloud-spy-data.c: $(SERVER)
 	$(AM_V_GEN) \
 		"$(top_builddir)/tools/resource-compiler" \
+			--enable-asm \
 			-c "$(srcdir)/cloud-spy.resources" \
 			-o "$(builddir)/cloud-spy-data" \
 			$(SERVER)
