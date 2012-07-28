@@ -85,6 +85,7 @@ cloud_spy_promise_deliver (CloudSpyPromise * self, CloudSpyPromiseResult result,
 
   g_mutex_unlock (self->mutex);
 
+  cloud_spy_nsfuncs->retainobject (&self->np_object);
   cloud_spy_nsfuncs->pluginthreadasynccall (self->npp, cloud_spy_promise_flush, self);
 }
 
@@ -96,6 +97,8 @@ cloud_spy_promise_flush (void * data)
   g_mutex_lock (self->mutex);
   cloud_spy_promise_flush_unlocked (self);
   g_mutex_unlock (self->mutex);
+
+  cloud_spy_nsfuncs->releaseobject (&self->np_object);
 }
 
 static void
