@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<embed type="application/x-vnd-cloud-spy" id="cloud-spy">
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+	</head>
+	<body>
+		<select data-view="processes">
+		</select>
+		<button data-action="refresh">Refresh</button>
+		<button data-action="attach">Attach</button>
+
+		<ul data-view="events">
+		</ul>
+
+		<script type="text/javascript">
+			var processList = $("[data-view='processes']");
+			var eventList = $("[data-view='events']");
+
+			var cspy = document.getElementById("cloud-spy");
+
+			function refreshProcessList() {
+				processList.children().remove();
+				cspy.enumerateProcesses().done(function(processes) {
+					function compareProcesses(a, b) { return a.name.toLowerCase().localeCompare (b.name.toLowerCase()); }
+					processes.sort(compareProcesses);
+					processes.forEach(function(process) {
+						var entry = $("<option></option>");
+						entry.attr('value', process.pid);
+						entry.text(process.name);
+						processList.append(entry);
+					});
+				});
+			}
+
+			function addEvent(text) {
+				var ev = $("<li></li>");
+				ev.text(text);
+				eventList.append(ev);
+			}
+
+			function attach() {
+				var pid = parseInt(processList.children().filter(":selected").attr('value'));
+				var source = function() {
+					var AF_INET = 2;
+
+					var connectImpl = Process.findModuleExportByName('libSystem.B.dylib', 'connect$UNIX2003');
+					if (connectImpl) {
+						Interceptor.attach(connectImpl, {
+							onEnter: function(args) {
+								var fd = Int32(args[0]);
+								var sockAddr = args[1];
+								var family = Memory.readU8(sockAddr + 1);
+								if (family == AF_INET) {
+									var port = (Memory.readU8(sockAddr + 2) << 8) | Memory.readU8(sockAddr + 3);
+									var ip =
+										Memory.readU8(sockAddr + 4) + "." +
+										Memory.readU8(sockAddr + 5) + "." +
+										Memory.readU8(sockAddr + 6) + "." +
+										Memory.readU8(sockAddr + 7);
+									send({
+										event: 'connect',
+										fd: fd,
+										ip: ip,
+										port: port
+									});
+								}
+							}
+						});
+					}
+					send({ event: 'resolve', name: 'connect', impl: connectImpl });
+				};
+				var rawSource = source.toString();
+				var rawBody = rawSource.substring(rawSource.indexOf("{") + 1, rawSource.lastIndexOf("}"));
+				addEvent("Attaching to pid " + pid);
+				cspy.attachTo(pid, rawBody).done(function() {
+					addEvent("Attached to pid " + pid);
+				}).fail(function(error) {
+					addEvent("Failed to attach: " + error);
+				});
+			}
+
+			cspy.addEventListener("message", function(pid, message) {
+				console.log(message.payload.event);
+				if (message.type === 'send') {
+					var payload = message.payload;
+					if (payload.event === 'resolve') {
+						addEvent("Resolved " + payload.name + "() to 0x" + payload.impl.toString(16));
+					} else if (payload.event == 'connect') {
+						addEvent("connect(fd=" + payload.fd + " ip=" + payload.ip + " port=" + payload.port + ")");
+					}
+				}
+			});
+
+			refreshProcessList();
+			$("[data-action='refresh']").click(refreshProcessList);
+			$("[data-action='attach']").click(attach);
+
+			function run(pid) {
+				cspy.attachTo(pid, source).done(function() {
+					console.log("attachTo() succeeded!");
+				}).fail(function(error) {
+					console.log("attachTo() failed: '" + error + "'");
+				});
+			};
+		</script>
+	</body>
+</html>
