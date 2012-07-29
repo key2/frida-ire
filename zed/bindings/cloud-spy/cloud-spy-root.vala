@@ -2,9 +2,8 @@ namespace CloudSpy {
 	public class Root : Object, RootApi {
 		private Server server = null;
 
-		private Zed.HostSessionService service;
-		private Zed.HostSessionProvider local_provider;
-		private Zed.HostSession local_session;
+		private Zed.TcpHostSessionProvider provider;
+		private Zed.HostSession host_session;
 
 		private Gee.HashMap<uint, Zed.AgentSession> agent_session_by_process_id = new Gee.HashMap<uint, Zed.AgentSession> ();
 		private Gee.HashMap<uint, uint> script_id_by_process_id = new Gee.HashMap<uint, uint> ();
@@ -18,15 +17,19 @@ namespace CloudSpy {
 				}
 			}
 
-			if (service != null) {
-				yield service.stop ();
-				service = null;
+			if (provider != null) {
+				yield provider.close ();
+				provider = null;
 			}
-			local_provider = null;
-			local_session = null;
+			host_session = null;
 
 			agent_session_by_process_id.clear ();
 			script_id_by_process_id.clear ();
+
+			if (server != null) {
+				server.destroy ();
+				server = null;
+			}
 		}
 
 		public async string enumerate_processes () throws IOError {
@@ -72,31 +75,14 @@ namespace CloudSpy {
 
 		protected async Zed.HostSession obtain_host_session () throws IOError {
 			if (server == null)
-				server = new Server();
+				server = new Server ();
 
-			if (local_session == null) {
-				service = new Zed.HostSessionService.with_tcp_backend_only ();
-
-				service.provider_available.connect ((p) => {
-					local_provider = p;
-				});
-				yield service.start ();
-
-				/* HACK */
-				while (local_provider == null) {
-					var timeout = new TimeoutSource (10);
-					timeout.set_callback (() => {
-						obtain_host_session.callback ();
-						return false;
-					});
-					timeout.attach (MainContext.get_thread_default ());
-					yield;
-				}
-
-				local_session = yield local_provider.create ();
+			if (host_session == null) {
+				provider = new Zed.TcpHostSessionProvider.for_address (server.address);
+				host_session = yield provider.create ();
 			}
 
-			return local_session;
+			return host_session;
 		}
 
 		protected async Zed.AgentSession obtain_agent_session (uint pid) throws IOError {
@@ -104,8 +90,8 @@ namespace CloudSpy {
 
 			var agent_session = agent_session_by_process_id[pid];
 			if (agent_session == null) {
-				var agent_session_id = yield local_session.attach_to (pid);
-				agent_session = yield local_provider.obtain_agent_session (agent_session_id);
+				var agent_session_id = yield host_session.attach_to (pid);
+				agent_session = yield provider.obtain_agent_session (agent_session_id);
 				agent_session.message_from_script.connect ((sid, msg) => {
 					message (pid, msg);
 				});
@@ -118,6 +104,13 @@ namespace CloudSpy {
 		protected class Server {
 			private TemporaryFile executable;
 
+			public string address {
+				get;
+				private set;
+			}
+
+			private const string SERVER_ADDRESS_TEMPLATE = "tcp:host=127.0.0.1,port=%u";
+
 			public Server () throws IOError {
 				var blob = CloudSpy.Data.get_zed_server_blob ();
 				executable = new TemporaryFile.from_stream ("server", new MemoryInputStream.from_data (blob.data, null));
@@ -127,13 +120,43 @@ namespace CloudSpy {
 					throw new IOError.FAILED (e.message);
 				}
 
+				address = SERVER_ADDRESS_TEMPLATE.printf (get_available_port ());
+
 				try {
-					string[] argv = new string[] { executable.file.get_path () };
+					string[] argv = new string[] { executable.file.get_path (), address };
 					Pid child_pid;
 					Process.spawn_async (null, argv, null, 0, null, out child_pid);
 				} catch (SpawnError e) {
+					executable.destroy ();
 					throw new IOError.FAILED (e.message);
 				}
+			}
+
+			public void destroy () {
+				executable.destroy ();
+			}
+
+			private uint get_available_port () {
+				uint port = 27042;
+
+				bool found_available = false;
+				var loopback = new InetAddress.loopback (SocketFamily.IPV4);
+				var address_in_use = new IOError.ADDRESS_IN_USE ("");
+				while (!found_available) {
+					try {
+						var socket = new Socket (SocketFamily.IPV4, SocketType.STREAM, SocketProtocol.TCP);
+						socket.bind (new InetSocketAddress (loopback, (uint16) port), false);
+						socket.close ();
+						found_available = true;
+					} catch (Error e) {
+						if (e.code == address_in_use.code)
+							port--;
+						else
+							found_available = true;
+					}
+				}
+
+				return port;
 			}
 		}
 
@@ -169,6 +192,10 @@ namespace CloudSpy {
 			}
 
 			~TemporaryFile () {
+				destroy ();
+			}
+
+			public void destroy () {
 				try {
 					file.delete (null);
 				} catch (Error e) {
