@@ -45,6 +45,8 @@
 					var AF_INET = 2;
 
 					var connectImpl = Process.findModuleExportByName('libSystem.B.dylib', 'connect$UNIX2003');
+					if (!connectImpl)
+						connectImpl = Process.findModuleExportByName('libSystem.B.dylib', 'connect');
 					if (connectImpl) {
 						Interceptor.attach(connectImpl, {
 							onEnter: function(args) {
@@ -95,14 +97,6 @@
 			refreshProcessList();
 			$("[data-action='refresh']").click(refreshProcessList);
 			$("[data-action='attach']").click(attach);
-
-			function run(pid) {
-				cspy.attachTo(pid, source).done(function() {
-					console.log("attachTo() succeeded!");
-				}).fail(function(error) {
-					console.log("attachTo() failed: '" + error + "'");
-				});
-			};
 		</script>
 	</body>
 </html>
