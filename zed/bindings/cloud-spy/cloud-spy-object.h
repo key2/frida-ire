@@ -2,6 +2,7 @@
 #define __CLOUD_SPY_OBJECT_H__
 
 #include <glib-object.h>
+#include <gio/gio.h>
 
 #define CLOUD_SPY_TYPE_OBJECT (cloud_spy_object_get_type ())
 #define CLOUD_SPY_OBJECT(obj) (G_TYPE_CHECK_INSTANCE_CAST ((obj), CLOUD_SPY_TYPE_OBJECT, CloudSpyObject))
@@ -27,9 +28,14 @@ struct _CloudSpyObject
 struct _CloudSpyObjectClass
 {
   GObjectClass parent_class;
+
+  void (* destroy) (CloudSpyObject * self, GAsyncReadyCallback callback, gpointer user_data);
+  void (* destroy_finish) (CloudSpyObject * self, GAsyncResult * res);
 };
 
 GType cloud_spy_object_get_type (void) G_GNUC_CONST;
+
+GMainContext * cloud_spy_object_get_main_context (CloudSpyObject * self);
 
 G_GNUC_INTERNAL void cloud_spy_object_type_init (void);
 G_GNUC_INTERNAL void cloud_spy_object_type_deinit (void);

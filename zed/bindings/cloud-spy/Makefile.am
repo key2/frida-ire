@@ -32,6 +32,7 @@ libcloud_spy_la_SOURCES = \
 	cloud-spy-plugin.h \
 	cloud-spy-plugin.cpp \
 	cloud-spy-object.h \
+	cloud-spy-object-priv.h \
 	cloud-spy-object.cpp \
 	cloud-spy-promise.h \
 	cloud-spy-promise.cpp \

@@ -4,5 +4,7 @@ namespace CloudSpy {
 	public abstract class Object : GLib.Object {
 		[CCode (has_construct_function = false)]
 		protected Object ();
+
+		protected abstract async void destroy ();
 	}
 }

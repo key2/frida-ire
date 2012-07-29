@@ -1,17 +1,16 @@
 #include "cloud-spy-object.h"
 
 #include "cloud-spy.h"
+#include "cloud-spy-object-priv.h"
 #include "cloud-spy-plugin.h"
 #include "cloud-spy-promise.h"
 #include "cloud-spy-variant.h"
 
-#include "npfunctions.h"
-
 typedef struct _CloudSpyObjectPrivate CloudSpyObjectPrivate;
 
-typedef struct _CloudSpyNPObject CloudSpyNPObject;
-typedef struct _CloudSpyNPObjectClass CloudSpyNPObjectClass;
-
+typedef struct _CloudSpyDestroyContext CloudSpyDestroyContext;
+typedef struct _CloudSpyInvokeContext CloudSpyInvokeContext;
+typedef struct _CloudSpyGetPropertyContext CloudSpyGetPropertyContext;
 typedef struct _CloudSpyClosure CloudSpyClosure;
 typedef struct _CloudSpyClosureInvocation CloudSpyClosureInvocation;
 
@@ -23,17 +22,27 @@ struct _CloudSpyObjectPrivate
   NPObject * json;
 };
 
-struct _CloudSpyNPObject
+struct _CloudSpyDestroyContext
 {
-  NPObject np_object;
-  CloudSpyObject * g_object;
+  CloudSpyObject * self;
+  volatile gboolean completed;
 };
 
-struct _CloudSpyNPObjectClass
+struct _CloudSpyInvokeContext
 {
-  NPClass np_class;
-  GType g_type;
-  CloudSpyObjectClass * g_class;
+  gchar * function_name;
+  GVariant * arguments;
+  NPObject * promise;
+};
+
+struct _CloudSpyGetPropertyContext
+{
+  CloudSpyObject * self;
+
+  const gchar * property_name;
+  GValue value;
+
+  volatile gboolean completed;
 };
 
 struct _CloudSpyClosure
@@ -53,6 +62,8 @@ static void cloud_spy_object_constructed (GObject * object);
 static void cloud_spy_object_dispose (GObject * object);
 static void cloud_spy_object_finalize (GObject * object);
 
+static gboolean cloud_spy_object_do_destroy (gpointer data);
+static void cloud_spy_object_destroy_ready (GObject * source_object, GAsyncResult * res, gpointer user_data);
 static gboolean cloud_spy_object_do_invoke (gpointer user_data);
 static void cloud_spy_object_invoke_ready (GObject * source_object, GAsyncResult * res, gpointer user_data);
 static gboolean cloud_spy_object_do_get_property (gpointer data);
@@ -65,6 +76,7 @@ static void cloud_spy_object_gvariant_to_npvariant (CloudSpyObject * self, GVari
 static gboolean cloud_spy_object_gvalue_to_npvariant (CloudSpyObject * self, const GValue * gvalue, NPVariant * result);
 
 static GClosure * cloud_spy_closure_new (CloudSpyNPObject * object, NPObject * callback);
+static void cloud_spy_closure_finalize (gpointer data, GClosure * closure);
 static void cloud_spy_closure_marshal (GClosure * closure, GValue * return_gvalue,
     guint n_param_values, const GValue * param_values, gpointer invocation_hint, gpointer marshal_data);
 static void cloud_spy_closure_invoke (void * data);
@@ -107,7 +119,8 @@ cloud_spy_object_constructed (GObject * object)
 static void
 cloud_spy_object_dispose (GObject * object)
 {
-  CloudSpyObjectPrivate * priv = CLOUD_SPY_OBJECT (object)->priv;
+  CloudSpyObject * self = CLOUD_SPY_OBJECT (object);
+  CloudSpyObjectPrivate * priv = self->priv;
 
   if (priv->dispatcher != NULL)
   {
@@ -132,6 +145,49 @@ cloud_spy_object_finalize (GObject * object)
   g_cond_free (self->priv->cond);
 
   G_OBJECT_CLASS (cloud_spy_object_parent_class)->finalize (object);
+}
+
+void
+cloud_spy_np_object_destroy (CloudSpyNPObject * obj)
+{
+  CloudSpyDestroyContext ctx = { 0, };
+  GSource * source;
+
+  ctx.self = obj->g_object;
+
+  source = g_idle_source_new ();
+  g_source_set_priority (source, G_PRIORITY_LOW);
+  g_source_set_callback (source, cloud_spy_object_do_destroy, &ctx, NULL);
+  g_source_attach (source, cloud_spy_main_context);
+  g_source_unref (source);
+
+  G_LOCK (cloud_spy_object);
+  while (!ctx.completed)
+    g_cond_wait (ctx.self->priv->cond, g_static_mutex_get_mutex (&G_LOCK_NAME (cloud_spy_object)));
+  G_UNLOCK (cloud_spy_object);
+}
+
+static gboolean
+cloud_spy_object_do_destroy (gpointer data)
+{
+  CloudSpyDestroyContext * ctx = static_cast<CloudSpyDestroyContext *> (data);
+
+  CLOUD_SPY_OBJECT_GET_CLASS (ctx->self)->destroy (ctx->self, cloud_spy_object_destroy_ready, ctx);
+
+  return FALSE;
+}
+
+static void
+cloud_spy_object_destroy_ready (GObject * source_object, GAsyncResult * res, gpointer user_data)
+{
+  CloudSpyDestroyContext * ctx = static_cast<CloudSpyDestroyContext *> (user_data);
+
+  CLOUD_SPY_OBJECT_GET_CLASS (ctx->self)->destroy_finish (ctx->self, res);
+
+  G_LOCK (cloud_spy_object);
+  ctx->completed = TRUE;
+  g_cond_signal (ctx->self->priv->cond);
+  G_UNLOCK (cloud_spy_object);
 }
 
 static NPObject *
@@ -191,15 +247,6 @@ cloud_spy_object_has_method (NPObject * npobj, NPIdentifier name)
   return cloud_spy_dispatcher_has_method (priv->dispatcher, static_cast<NPString *> (name)->UTF8Characters) != FALSE;
 }
 
-typedef struct _CloudSpyInvokeContext CloudSpyInvokeContext;
-
-struct _CloudSpyInvokeContext
-{
-  gchar * function_name;
-  GVariant * arguments;
-  NPObject * promise;
-};
-
 static bool
 cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * args, uint32_t arg_count, NPVariant * result)
 {
@@ -232,15 +279,15 @@ cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * 
   ctx->arguments = arguments;
   cloud_spy_nsfuncs->retainobject (npobj);
   ctx->promise = cloud_spy_promise_new (self->priv->npp, npobj, cloud_spy_npobject_release);
+
   cloud_spy_nsfuncs->retainobject (ctx->promise);
+  OBJECT_TO_NPVARIANT (ctx->promise, *result);
 
   source = g_idle_source_new ();
   g_source_set_priority (source, G_PRIORITY_HIGH);
   g_source_set_callback (source, cloud_spy_object_do_invoke, ctx, NULL);
   g_source_attach (source, cloud_spy_main_context);
   g_source_unref (source);
-
-  OBJECT_TO_NPVARIANT (ctx->promise, *result);
 
   return true;
 
@@ -329,18 +376,6 @@ cloud_spy_object_has_property (NPObject * npobj, NPIdentifier name)
 
   return g_object_class_find_property (G_OBJECT_CLASS (np_class->g_class), name_str->UTF8Characters) != NULL;
 }
-
-typedef struct _CloudSpyGetPropertyContext CloudSpyGetPropertyContext;
-
-struct _CloudSpyGetPropertyContext
-{
-  CloudSpyObject * self;
-
-  const gchar * property_name;
-  GValue value;
-
-  volatile gboolean completed;
-};
 
 static bool
 cloud_spy_object_get_property (NPObject * npobj, NPIdentifier name, NPVariant * result)
@@ -669,6 +704,7 @@ cloud_spy_closure_new (CloudSpyNPObject * object, NPObject * callback)
   CloudSpyClosure * self;
 
   closure = g_closure_new_simple (sizeof (CloudSpyClosure), NULL);
+  g_closure_add_finalize_notifier (closure, NULL, cloud_spy_closure_finalize);
   self = reinterpret_cast<CloudSpyClosure *> (closure);
   self->object = object;
   self->callback = cloud_spy_nsfuncs->retainobject (callback);
@@ -676,6 +712,14 @@ cloud_spy_closure_new (CloudSpyNPObject * object, NPObject * callback)
   g_closure_set_marshal (closure, cloud_spy_closure_marshal);
 
   return closure;
+}
+
+static void
+cloud_spy_closure_finalize (gpointer data, GClosure * closure)
+{
+  CloudSpyClosure * self = reinterpret_cast<CloudSpyClosure *> (closure);
+
+  cloud_spy_nsfuncs->releaseobject (self->callback);
 }
 
 static void
@@ -720,14 +764,8 @@ cloud_spy_closure_invoke (void * data)
     NPVariant result;
 
     VOID_TO_NPVARIANT (result);
-    if (cloud_spy_nsfuncs->invokeDefault (self->object->g_object->priv->npp, self->callback, args, arg_count, &result))
-    {
-      cloud_spy_nsfuncs->releasevariantvalue (&result);
-    }
-    else
-    {
-      g_debug ("closure invocation failed");
-    }
+    cloud_spy_nsfuncs->invokeDefault (self->object->g_object->priv->npp, self->callback, args, arg_count, &result);
+    cloud_spy_nsfuncs->releasevariantvalue (&result);
   }
 
   for (i = 0; i != arg_count; i++)

@@ -136,14 +136,8 @@ cloud_spy_promise_invoke_callback (gpointer data, gpointer user_data)
   NPVariant result;
 
   VOID_TO_NPVARIANT (result);
-  if (cloud_spy_nsfuncs->invokeDefault (self->npp, callback, &g_array_index (self->args, NPVariant, 0), self->args->len, &result))
-  {
-    cloud_spy_nsfuncs->releasevariantvalue (&result);
-  }
-  else
-  {
-    g_debug ("promise callback invocation failed");
-  }
+  cloud_spy_nsfuncs->invokeDefault (self->npp, callback, &g_array_index (self->args, NPVariant, 0), self->args->len, &result);
+  cloud_spy_nsfuncs->releasevariantvalue (&result);
 }
 
 static bool

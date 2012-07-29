@@ -2,12 +2,32 @@ namespace CloudSpy {
 	public class Root : Object, RootApi {
 		private Server server = null;
 
-		private Zed.HostSessionService service = new Zed.HostSessionService.with_local_backend_only ();
+		private Zed.HostSessionService service;
 		private Zed.HostSessionProvider local_provider;
 		private Zed.HostSession local_session;
 
 		private Gee.HashMap<uint, Zed.AgentSession> agent_session_by_process_id = new Gee.HashMap<uint, Zed.AgentSession> ();
 		private Gee.HashMap<uint, uint> script_id_by_process_id = new Gee.HashMap<uint, uint> ();
+
+		protected override async void destroy () {
+			var agent_sessions = agent_session_by_process_id.values.to_array ();
+			foreach (var agent_session in agent_sessions) {
+				try {
+					yield agent_session.close ();
+				} catch (IOError e) {
+				}
+			}
+
+			if (service != null) {
+				yield service.stop ();
+				service = null;
+			}
+			local_provider = null;
+			local_session = null;
+
+			agent_session_by_process_id.clear ();
+			script_id_by_process_id.clear ();
+		}
 
 		public async string enumerate_processes () throws IOError {
 			var host_session = yield obtain_host_session ();

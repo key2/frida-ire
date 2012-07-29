@@ -2,6 +2,7 @@
 
 #include "cloud-spy.h"
 #include "cloud-spy-object.h"
+#include "cloud-spy-object-priv.h"
 
 #include <glib-object.h>
 #ifdef G_OS_WIN32
@@ -121,7 +122,7 @@ cloud_spy_plugin_new (NPMIMEType plugin_type, NPP instance, uint16_t mode, int16
   cloud_spy_init_logging (instance);
   G_UNLOCK (cloud_spy_plugin);
 
-  g_debug ("CloudSpy plugin %p instantiated in pid=%d", instance, getpid ());
+  g_debug ("CloudSpy plugin %p instantiated in pid %d", instance, getpid ());
 
   return NPERR_NO_ERROR;
 }
@@ -129,12 +130,23 @@ cloud_spy_plugin_new (NPMIMEType plugin_type, NPP instance, uint16_t mode, int16
 static NPError
 cloud_spy_plugin_destroy (NPP instance, NPSavedData ** saved)
 {
+  CloudSpyNPObject * root_object;
+
   (void) saved;
+
+  G_LOCK (cloud_spy_plugin);
+  root_object = static_cast<CloudSpyNPObject *> (g_hash_table_lookup (cloud_spy_plugin_roots, instance));
+  G_UNLOCK (cloud_spy_plugin);
+
+  if (root_object != NULL)
+    cloud_spy_np_object_destroy (root_object);
 
   G_LOCK (cloud_spy_plugin);
   g_hash_table_remove (cloud_spy_plugin_roots, instance);
   cloud_spy_deinit_logging (instance);
   G_UNLOCK (cloud_spy_plugin);
+
+  g_debug ("CloudSpy plugin %p destroyed in pid %d", instance, getpid ());
 
   return NPERR_NO_ERROR;
 }
