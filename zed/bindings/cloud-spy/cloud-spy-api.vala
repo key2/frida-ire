@@ -5,6 +5,7 @@ namespace CloudSpy {
 		public abstract async void attach_to (uint pid, string source) throws IOError;
 		public abstract async void detach_from (uint pid) throws IOError;
 
+		public signal void detach (uint pid);
 		public signal void message (uint pid, string text);
 	}
 

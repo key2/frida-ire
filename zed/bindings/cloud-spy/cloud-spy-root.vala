@@ -5,6 +5,7 @@ namespace CloudSpy {
 		private Zed.TcpHostSessionProvider provider;
 		private Zed.HostSession host_session;
 
+		private Gee.HashMap<uint, uint> process_id_by_agent_session_id = new Gee.HashMap<uint, uint> ();
 		private Gee.HashMap<uint, Zed.AgentSession> agent_session_by_process_id = new Gee.HashMap<uint, Zed.AgentSession> ();
 		private Gee.HashMap<uint, uint> script_id_by_process_id = new Gee.HashMap<uint, uint> ();
 
@@ -23,6 +24,7 @@ namespace CloudSpy {
 			}
 			host_session = null;
 
+			process_id_by_agent_session_id.clear ();
 			agent_session_by_process_id.clear ();
 			script_id_by_process_id.clear ();
 
@@ -79,6 +81,15 @@ namespace CloudSpy {
 
 			if (host_session == null) {
 				provider = new Zed.TcpHostSessionProvider.for_address (server.address);
+				provider.agent_session_closed.connect ((sid, error) => {
+					uint pid;
+					if (process_id_by_agent_session_id.unset (sid.handle, out pid)) {
+						agent_session_by_process_id.unset (pid);
+						script_id_by_process_id.unset (pid);
+
+						detach (pid);
+					}
+				});
 				host_session = yield provider.create ();
 			}
 
@@ -95,6 +106,7 @@ namespace CloudSpy {
 				agent_session.message_from_script.connect ((sid, msg) => {
 					message (pid, msg);
 				});
+				process_id_by_agent_session_id[agent_session_id.handle] = pid;
 				agent_session_by_process_id[pid] = agent_session;
 			}
 
