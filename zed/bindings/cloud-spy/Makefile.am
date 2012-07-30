@@ -1,4 +1,8 @@
+if ENABLE_LOCAL_BACKENDS
 SERVER := $(top_builddir)/src/zed-server
+else
+SERVER := $(top_builddir)/../../frida-ire-universal/zed-server
+endif
 
 deploy: all
 	cp .libs/libcloud-spy.0.dylib ../../../cloud-spy/chrome/plugin-mac.plugin/Contents/MacOS/libnpcsplugin.dylib
