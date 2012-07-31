@@ -1,0 +1,3 @@
+[submodule "zed/ext/libgum"]
+	path = zed/ext/libgum
+	url = git@github.com:oleavr/gum.git
