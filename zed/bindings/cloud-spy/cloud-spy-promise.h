@@ -1,9 +1,7 @@
 #ifndef __CLOUD_SPY_PROMISE_H__
 #define __CLOUD_SPY_PROMISE_H__
 
-#include "npfunctions.h"
-
-#include <glib.h>
+#include "cloud-spy-plugin.h"
 
 typedef struct _CloudSpyPromise CloudSpyPromise;
 typedef gint CloudSpyPromiseResult;

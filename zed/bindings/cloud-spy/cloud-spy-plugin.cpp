@@ -12,6 +12,8 @@
 #endif
 #include "npfunctions.h"
 
+static gint cloud_spy_get_process_id (void);
+
 NPNetscapeFuncs * cloud_spy_nsfuncs = NULL;
 GMainContext * cloud_spy_main_context = NULL;
 static GMainLoop * cloud_spy_main_loop = NULL;
@@ -29,6 +31,9 @@ cloud_spy_log (const gchar * log_domain, GLogLevelFlags log_level, const gchar *
   NPObject * window = NULL, * console = NULL;
   NPVariant variant, result;
   NPError error;
+
+  (void) log_domain;
+  (void) log_level;
 
   error = browser->getvalue (instance, NPNVWindowNPObject, &window);
   if (error != NPERR_NO_ERROR)
@@ -122,7 +127,7 @@ cloud_spy_plugin_new (NPMIMEType plugin_type, NPP instance, uint16_t mode, int16
   cloud_spy_init_logging (instance);
   G_UNLOCK (cloud_spy_plugin);
 
-  g_debug ("CloudSpy plugin %p instantiated in pid %d", instance, getpid ());
+  g_debug ("CloudSpy plugin %p instantiated in pid %d", instance, cloud_spy_get_process_id ());
 
   return NPERR_NO_ERROR;
 }
@@ -146,7 +151,7 @@ cloud_spy_plugin_destroy (NPP instance, NPSavedData ** saved)
   cloud_spy_deinit_logging (instance);
   G_UNLOCK (cloud_spy_plugin);
 
-  g_debug ("CloudSpy plugin %p destroyed in pid %d", instance, getpid ());
+  g_debug ("CloudSpy plugin %p destroyed in pid %d", instance, cloud_spy_get_process_id ());
 
   return NPERR_NO_ERROR;
 }
@@ -281,7 +286,7 @@ NP_Shutdown (void)
   return NPERR_NO_ERROR;
 }
 
-const char *
+char *
 NP_GetMIMEDescription (void)
 {
   return "application/x-vnd-cloud-spy:.cspy:oleavr@gmail.com";
@@ -318,4 +323,14 @@ void
 cloud_spy_npobject_release (gpointer npobject)
 {
   cloud_spy_nsfuncs->releaseobject (static_cast<NPObject *> (npobject));
+}
+
+static gint
+cloud_spy_get_process_id (void)
+{
+#ifdef G_OS_WIN32
+  return GetCurrentProcessId ();
+#else
+  return getpid ();
+#endif
 }

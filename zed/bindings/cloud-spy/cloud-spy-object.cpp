@@ -182,6 +182,8 @@ cloud_spy_object_destroy_ready (GObject * source_object, GAsyncResult * res, gpo
 {
   CloudSpyDestroyContext * ctx = static_cast<CloudSpyDestroyContext *> (user_data);
 
+  (void) source_object;
+
   CLOUD_SPY_OBJECT_GET_CLASS (ctx->self)->destroy_finish (ctx->self, res);
 
   G_LOCK (cloud_spy_object);
@@ -322,6 +324,8 @@ cloud_spy_object_invoke_ready (GObject * source_object, GAsyncResult * res, gpoi
   CloudSpyObject * self = static_cast<CloudSpyNPObject *> (promise->user_data)->g_object;
   GVariant * retval;
   GError * error = NULL;
+
+  (void) source_object;
 
   retval = cloud_spy_dispatcher_invoke_finish (self->priv->dispatcher, res, &error);
   if (error == NULL)
@@ -719,6 +723,8 @@ cloud_spy_closure_finalize (gpointer data, GClosure * closure)
 {
   CloudSpyClosure * self = reinterpret_cast<CloudSpyClosure *> (closure);
 
+  (void) data;
+
   cloud_spy_nsfuncs->releaseobject (self->callback);
 }
 
@@ -729,6 +735,10 @@ cloud_spy_closure_marshal (GClosure * closure, GValue * return_gvalue, guint n_p
   CloudSpyClosure * self = reinterpret_cast<CloudSpyClosure *> (closure);
   CloudSpyClosureInvocation * invocation;
   guint i;
+
+  (void) return_gvalue;
+  (void) invocation_hint;
+  (void) marshal_data;
 
   invocation = g_slice_new (CloudSpyClosureInvocation);
   invocation->closure = self;

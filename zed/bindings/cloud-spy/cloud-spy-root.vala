@@ -1,8 +1,12 @@
 namespace CloudSpy {
 	public class Root : Object, RootApi {
+#if !WINDOWS
 		private Server server = null;
 
 		private Zed.TcpHostSessionProvider provider;
+#else
+		private Zed.WindowsHostSessionProvider provider;
+#endif
 		private Zed.HostSession host_session;
 
 		private Gee.HashMap<uint, uint> process_id_by_agent_session_id = new Gee.HashMap<uint, uint> ();
@@ -28,10 +32,12 @@ namespace CloudSpy {
 			agent_session_by_process_id.clear ();
 			script_id_by_process_id.clear ();
 
+#if !WINDOWS
 			if (server != null) {
 				server.destroy ();
 				server = null;
 			}
+#endif
 		}
 
 		public async string enumerate_processes () throws IOError {
@@ -76,11 +82,14 @@ namespace CloudSpy {
 		}
 
 		protected async Zed.HostSession obtain_host_session () throws IOError {
-			if (server == null)
-				server = new Server ();
-
 			if (host_session == null) {
+#if !WINDOWS
+				if (server == null)
+					server = new Server ();
 				provider = new Zed.TcpHostSessionProvider.for_address (server.address);
+#else
+				provider = new Zed.WindowsHostSessionProvider ();
+#endif
 				provider.agent_session_closed.connect ((sid, error) => {
 					uint pid;
 					if (process_id_by_agent_session_id.unset (sid.handle, out pid)) {
@@ -113,6 +122,7 @@ namespace CloudSpy {
 			return agent_session;
 		}
 
+#if !WINDOWS
 		protected class Server {
 			private TemporaryFile executable;
 
@@ -214,5 +224,6 @@ namespace CloudSpy {
 				}
 			}
 		}
+#endif
 	}
 }

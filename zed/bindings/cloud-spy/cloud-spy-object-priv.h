@@ -2,7 +2,7 @@
 #define __CLOUD_SPY_OBJECT_PRIV_H__
 
 #include "cloud-spy-object.h"
-#include "npfunctions.h"
+#include "cloud-spy-plugin.h"
 
 G_BEGIN_DECLS
 

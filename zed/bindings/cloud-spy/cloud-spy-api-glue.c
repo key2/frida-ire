@@ -1,5 +1,3 @@
-#include "cloud-spy-plugin.h"
-
 #include <glib.h>
 #include <glib-object.h>
 #include <cloud-spy-object.h>
@@ -49,7 +47,7 @@ static void cloud_spy_dispatcher_invocation_return_gerror (GDBusMethodInvocation
 
 #ifdef _MSC_VER
 # pragma warning (push)
-# pragma warning (disable: 4054 4100)
+# pragma warning (disable: 4054 4055 4090 4100 4152 4189 4702)
 #endif
 #include "cloud-spy-api.c"
 #ifdef _MSC_VER
@@ -87,7 +85,7 @@ cloud_spy_dispatcher_do_invoke (CloudSpyDispatcher * self, GDBusMethodInfo * met
   CloudSpyDispatcherInvocation * invocation;
 
   invocation = cloud_spy_dispatcher_invocation_new (method, parameters,
-      g_simple_async_result_new (self, callback, user_data, cloud_spy_dispatcher_do_invoke));
+      g_simple_async_result_new (G_OBJECT (self), callback, user_data, GSIZE_TO_POINTER (cloud_spy_dispatcher_do_invoke)));
   cloud_spy_dispatcher_invocation_perform (invocation);
   cloud_spy_dispatcher_invocation_unref (invocation);
 }
@@ -96,6 +94,8 @@ static GVariant *
 cloud_spy_dispatcher_do_invoke_finish (CloudSpyDispatcher * self, GAsyncResult * res, GError ** error)
 {
   GSimpleAsyncResult * ar = G_SIMPLE_ASYNC_RESULT (res);
+
+  (void) self;
 
   if (g_simple_async_result_propagate_error (ar, error))
     return NULL;
@@ -117,7 +117,6 @@ static CloudSpyDispatcherInvocation *
 cloud_spy_dispatcher_invocation_new (GDBusMethodInfo * method, GVariant * parameters, GSimpleAsyncResult * res)
 {
   CloudSpyDispatcherInvocation * invocation;
-  GSource * source;
 
   invocation = g_slice_new (CloudSpyDispatcherInvocation);
   invocation->magic = &cloud_spy_dispatcher_magic;
@@ -203,7 +202,7 @@ cloud_spy_dispatcher_invocation_return_gerror (GDBusMethodInvocation * invocatio
 {
   CloudSpyDispatcherInvocation * self = (CloudSpyDispatcherInvocation *) invocation;
 
-  g_simple_async_result_take_error (self->res, error);
+  g_simple_async_result_take_error (self->res, (GError *) error);
   g_simple_async_result_complete (self->res);
 
   cloud_spy_dispatcher_invocation_unref (self);

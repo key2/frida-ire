@@ -61,7 +61,7 @@ namespace CloudSpy {
 		}
 
 		private void validate_argument_list (Variant args, DBusMethodInfo * method) throws IOError {
-			var actual_arg_count = args.n_children ();
+			var actual_arg_count = (int) args.n_children ();
 			var expected_arg_count = method->in_args.length;
 			if (actual_arg_count != expected_arg_count)
 				throw new IOError.INVALID_ARGUMENT ("argument count mismatch");

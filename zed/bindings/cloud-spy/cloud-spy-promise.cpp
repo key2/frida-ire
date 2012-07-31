@@ -163,7 +163,7 @@ cloud_spy_promise_invoke (NPObject * npobj, NPIdentifier name, const NPVariant *
 
   if (strcmp (function_name, "state") == 0)
   {
-    const gchar * state;
+    const gchar * state = NULL;
 
     if (arg_count != 0)
     {
@@ -188,7 +188,7 @@ cloud_spy_promise_invoke (NPObject * npobj, NPIdentifier name, const NPVariant *
   }
   else
   {
-    if (arg_count != 1 or args[0].type != NPVariantType_Object)
+    if (arg_count != 1 || args[0].type != NPVariantType_Object)
     {
       cloud_spy_nsfuncs->setexception (npobj, "invalid argument");
       return true;
@@ -202,7 +202,8 @@ cloud_spy_promise_invoke (NPObject * npobj, NPIdentifier name, const NPVariant *
     else if (strcmp (function_name, "always") == 0)
       callbacks = self->on_complete;
     else
-      g_assert_not_reached ();
+      callbacks = NULL;
+    g_assert (callbacks != NULL);
 
     g_mutex_lock (self->mutex);
     g_ptr_array_add (callbacks, callback);
