@@ -44,15 +44,24 @@
 				var source = function() {
 					var AF_INET = 2;
 
+					var isWindows = false;
 					var connectImpl = Process.findModuleExportByName('libSystem.B.dylib', 'connect$UNIX2003');
 					if (!connectImpl)
 						connectImpl = Process.findModuleExportByName('libSystem.B.dylib', 'connect');
+					if (!connectImpl) {
+						isWindows = true;
+						connectImpl = Process.findModuleExportByName('ws2_32.dll', 'connect');
+					}
 					if (connectImpl) {
 						Interceptor.attach(connectImpl, {
 							onEnter: function(args) {
 								var fd = Int32(args[0]);
 								var sockAddr = args[1];
-								var family = Memory.readU8(sockAddr + 1);
+								var family;
+								if (isWindows)
+									family = Memory.readU8(sockAddr);
+								else
+									family = Memory.readU8(sockAddr + 1);
 								if (family == AF_INET) {
 									var port = (Memory.readU8(sockAddr + 2) << 8) | Memory.readU8(sockAddr + 3);
 									var ip =
@@ -89,7 +98,10 @@
 				if (message.type === 'send') {
 					var payload = message.payload;
 					if (payload.event === 'resolve') {
-						addEvent("Resolved " + payload.name + "() to 0x" + payload.impl.toString(16));
+						if (payload.impl)
+							addEvent("Resolved " + payload.name + "() to 0x" + payload.impl.toString(16));
+						else
+							addEvent("Failed to resolve " + payload.name);
 					} else if (payload.event == 'connect') {
 						addEvent("connect(fd=" + payload.fd + " ip=" + payload.ip + " port=" + payload.port + ")");
 					}
