@@ -219,7 +219,7 @@
       <WarningLevel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">TurnOffAllWarnings</WarningLevel>
     </ClCompile>
     <ClCompile Include="cloud-spy-promise.cpp" />
-    <ClCompile Include="cloud-spy-variant.cpp" />
+    <ClCompile Include="cloud-spy-byte-array.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\zed-core.vcxproj">
@@ -267,7 +267,7 @@ echo &gt; "$(IntDir)valacode.stamp"
     <ClInclude Include="cloud-spy-object.h" />
     <ClInclude Include="cloud-spy-plugin.h" />
     <ClInclude Include="cloud-spy-promise.h" />
-    <ClInclude Include="cloud-spy-variant.h" />
+    <ClInclude Include="cloud-spy-byte-array.h" />
     <ClInclude Include="npapi.h" />
     <ClInclude Include="npfunctions.h" />
     <ClInclude Include="npruntime.h" />

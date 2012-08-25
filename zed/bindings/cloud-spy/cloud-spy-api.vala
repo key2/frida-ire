@@ -6,7 +6,7 @@ namespace CloudSpy {
 		public abstract async void detach_from (uint pid) throws IOError;
 
 		public signal void detach (uint pid);
-		public signal void message (uint pid, string text);
+		public signal void message (uint pid, string text, Variant data);
 	}
 
 	public class Dispatcher : GLib.Object {

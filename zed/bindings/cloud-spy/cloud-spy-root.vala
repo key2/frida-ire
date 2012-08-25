@@ -112,8 +112,15 @@ namespace CloudSpy {
 			if (agent_session == null) {
 				var agent_session_id = yield host_session.attach_to (pid);
 				agent_session = yield provider.obtain_agent_session (agent_session_id);
-				agent_session.message_from_script.connect ((sid, msg) => {
-					message (pid, msg);
+				agent_session.message_from_script.connect ((sid, text, data) => {
+                                        Variant data_value = null;
+                                        if (data.length > 0) {
+                                                void * data_copy_raw = Memory.dup (data, data.length);
+                                                unowned uint8[data.length] data_copy = (uint8[]) data_copy_raw;
+                                                data_copy.length = data.length;
+                                                data_value = Variant.new_from_data<uint8[]> (new VariantType ("ay"), data_copy, true);
+                                        }
+                                        message (pid, text, data_value);
 				});
 				process_id_by_agent_session_id[agent_session_id.handle] = pid;
 				agent_session_by_process_id[pid] = agent_session;

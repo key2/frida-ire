@@ -1,10 +1,10 @@
 #include "cloud-spy-object.h"
 
 #include "cloud-spy.h"
+#include "cloud-spy-byte-array.h"
 #include "cloud-spy-object-priv.h"
 #include "cloud-spy-plugin.h"
 #include "cloud-spy-promise.h"
-#include "cloud-spy-variant.h"
 
 typedef struct _CloudSpyObjectPrivate CloudSpyObjectPrivate;
 
@@ -563,12 +563,6 @@ cloud_spy_object_gvariant_to_npvariant (CloudSpyObject * self, GVariant * retval
   const GVariantType * type;
 
   type = g_variant_get_type (retval);
-  if (g_variant_type_is_container (type))
-  {
-    OBJECT_TO_NPVARIANT (cloud_spy_variant_new (self->priv->npp, retval), *result);
-    return;
-  }
-
   if (g_variant_type_equal (type, G_VARIANT_TYPE_BOOLEAN))
   {
     BOOLEAN_TO_NPVARIANT (g_variant_get_boolean (retval), *result);
@@ -624,6 +618,23 @@ cloud_spy_object_gvalue_to_npvariant (CloudSpyObject * self, const GValue * gval
       VOID_TO_NPVARIANT (*result);
       cloud_spy_nsfuncs->invoke (self->priv->npp, self->priv->json, cloud_spy_nsfuncs->getstringidentifier ("parse"), &variant, 1, result);
       break;
+    case G_TYPE_VARIANT:
+    {
+      GVariant * variant;
+
+      variant = g_value_get_variant (gvalue);
+      if (variant == NULL)
+      {
+        NULL_TO_NPVARIANT (*result);
+        break;
+      }
+      else if (g_variant_is_of_type (variant, G_VARIANT_TYPE ("ay")))
+      {
+        OBJECT_TO_NPVARIANT (cloud_spy_byte_array_new (self->priv->npp,
+            static_cast<const guint8 *> (g_variant_get_data (variant)), g_variant_get_size (variant)), *result);
+        break;
+      }
+    }
     default:
       VOID_TO_NPVARIANT (*result);
       return FALSE;

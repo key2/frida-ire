@@ -39,6 +39,7 @@ cloud_spy_log (const gchar * log_domain, GLogLevelFlags log_level, const gchar *
   if (error != NPERR_NO_ERROR)
     goto beach;
 
+  VOID_TO_NPVARIANT (variant);
   if (!browser->getproperty (instance, window, browser->getstringidentifier ("console"), &variant))
     goto beach;
   console = NPVARIANT_TO_OBJECT (variant);

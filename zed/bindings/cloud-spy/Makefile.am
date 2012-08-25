@@ -40,8 +40,8 @@ libcloud_spy_la_SOURCES = \
 	cloud-spy-object.cpp \
 	cloud-spy-promise.h \
 	cloud-spy-promise.cpp \
-	cloud-spy-variant.h \
-	cloud-spy-variant.cpp \
+	cloud-spy-byte-array.h \
+	cloud-spy-byte-array.cpp \
 	cloud-spy-api-glue.c \
 	cloud-spy-root.c
 libcloud_spy_la_CFLAGS = \
