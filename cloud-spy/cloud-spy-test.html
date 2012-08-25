@@ -74,7 +74,7 @@
 										fd: fd,
 										ip: ip,
 										port: port
-									});
+									}, Memory.readByteArray(sockAddr, 10));
 								}
 							}
 						});
@@ -94,7 +94,7 @@
 			cspy.addEventListener("detach", function(pid) {
 				addEvent("Detached from pid " + pid);
 			});
-			cspy.addEventListener("message", function(pid, message) {
+			cspy.addEventListener("message", function(pid, message, data) {
 				if (message.type === 'send') {
 					var payload = message.payload;
 					if (payload.event === 'resolve') {
