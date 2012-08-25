@@ -1,4 +1,5 @@
 {
+  "manifest_version": 2,
   "name": "CloudSpy",
   "description": "oSpy in the cloud",
   "version": "1.0.0.0",
