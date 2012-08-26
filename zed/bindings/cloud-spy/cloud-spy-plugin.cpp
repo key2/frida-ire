@@ -12,6 +12,8 @@
 #endif
 #include "npfunctions.h"
 
+static gchar * cloud_spy_mime_description = "application/x-vnd-cloud-spy:.cspy:ole.andre.ravnas@tillitech.com";
+
 static gint cloud_spy_get_process_id (void);
 
 NPNetscapeFuncs * cloud_spy_nsfuncs = NULL;
@@ -290,7 +292,7 @@ NP_Shutdown (void)
 char *
 NP_GetMIMEDescription (void)
 {
-  return "application/x-vnd-cloud-spy:.cspy:oleavr@gmail.com";
+  return cloud_spy_mime_description;
 }
 
 void
