@@ -47,7 +47,7 @@ static void cloud_spy_dispatcher_invocation_return_gerror (GDBusMethodInvocation
 
 #ifdef _MSC_VER
 # pragma warning (push)
-# pragma warning (disable: 4054 4055 4090 4100 4152 4189 4702)
+# pragma warning (disable: 4054 4055 4090 4100 4152 4189 4267 4702)
 #endif
 #include "cloud-spy-api.c"
 #ifdef _MSC_VER
