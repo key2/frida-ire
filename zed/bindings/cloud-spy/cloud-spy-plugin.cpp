@@ -12,7 +12,7 @@
 #endif
 #include "npfunctions.h"
 
-static gchar * cloud_spy_mime_description = "application/x-vnd-cloud-spy:.cspy:ole.andre.ravnas@tillitech.com";
+static gchar cloud_spy_mime_description[] = "application/x-vnd-cloud-spy:.cspy:ole.andre.ravnas@tillitech.com";
 
 static gint cloud_spy_get_process_id (void);
 
