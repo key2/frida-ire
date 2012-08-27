@@ -5,6 +5,8 @@
 		<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
 	</head>
 	<body>
+		<select data-view="devices">
+		</select>
 		<select data-view="processes">
 		</select>
 		<button data-action="refresh">Refresh</button>
@@ -14,14 +16,40 @@
 		</ul>
 
 		<script type="text/javascript">
+			var deviceList = $("[data-view='devices']");
 			var processList = $("[data-view='processes']");
 			var eventList = $("[data-view='events']");
 
 			var cspy = document.getElementById("cloud-spy");
 
+			function getSelectedDeviceId() {
+				return parseInt(deviceList.children().filter(":selected").attr('value'));
+			}
+
+			function getSelectedPid() {
+				return parseInt(processList.children().filter(":selected").attr('value'));
+			}
+
+			function refreshDeviceList() {
+				deviceList.children().remove();
+				cspy.enumerateDevices().done(function(devices) {
+					addEvent("Enumerated devices, there's now " + devices.length + " devices");
+					devices.forEach(function(device) {
+						var entry = $("<option></option>");
+						entry.attr('value', device.id);
+						entry.text(device.name);
+						deviceList.append(entry);
+					});
+					refreshProcessList();
+				}).fail(function(error) {
+					addEvent("Failed to enumerate devices: " + error);
+					refreshProcessList();
+				});
+			}
+
 			function refreshProcessList() {
 				processList.children().remove();
-				cspy.enumerateProcesses().done(function(processes) {
+				cspy.enumerateProcesses(getSelectedDeviceId()).done(function(processes) {
 					function compareProcesses(a, b) { return a.name.toLowerCase().localeCompare (b.name.toLowerCase()); }
 					processes.sort(compareProcesses);
 					processes.forEach(function(process) {
@@ -30,6 +58,8 @@
 						entry.text(process.name);
 						processList.append(entry);
 					});
+				}).fail(function(error) {
+					addEvent("Failed to enumerate processes: " + error);
 				});
 			}
 
@@ -40,7 +70,8 @@
 			}
 
 			function attach() {
-				var pid = parseInt(processList.children().filter(":selected").attr('value'));
+				var deviceId = getSelectedDeviceId();
+				var pid = getSelectedPid();
 				var source = function() {
 					var AF_INET = 2;
 
@@ -84,17 +115,18 @@
 				var rawSource = source.toString();
 				var rawBody = rawSource.substring(rawSource.indexOf("{") + 1, rawSource.lastIndexOf("}"));
 				addEvent("Attaching to pid " + pid);
-				cspy.attachTo(pid, rawBody).done(function() {
+				cspy.attachTo(deviceId, pid, rawBody).done(function() {
 					addEvent("Attached to pid " + pid);
 				}).fail(function(error) {
 					addEvent("Failed to attach: " + error);
 				});
 			}
 
-			cspy.addEventListener("detach", function(pid) {
+			cspy.addEventListener("devices-changed", refreshDeviceList);
+			cspy.addEventListener("detach", function(deviceId, pid) {
 				addEvent("Detached from pid " + pid);
 			});
-			cspy.addEventListener("message", function(pid, message, data) {
+			cspy.addEventListener("message", function(deviceId, pid, message, data) {
 				if (message.type === 'send') {
 					var payload = message.payload;
 					if (payload.event === 'resolve') {
@@ -108,7 +140,8 @@
 				}
 			});
 
-			refreshProcessList();
+			refreshDeviceList();
+			deviceList.change(refreshProcessList);
 			$("[data-action='refresh']").click(refreshProcessList);
 			$("[data-action='attach']").click(attach);
 		</script>

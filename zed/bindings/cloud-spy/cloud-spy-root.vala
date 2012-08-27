@@ -1,54 +1,63 @@
 namespace CloudSpy {
 	public class Root : Object, RootApi {
-#if !WINDOWS
-		private Server server = null;
+		private Gee.ArrayList<Device> devices = new Gee.ArrayList<Device> ();
+		private uint last_device_id = 1;
 
-		private Zed.TcpHostSessionProvider provider;
-#else
-		private Zed.WindowsHostSessionProvider provider;
-#endif
-		private Zed.HostSession host_session;
-
-		private Gee.HashMap<uint, uint> process_id_by_agent_session_id = new Gee.HashMap<uint, uint> ();
-		private Gee.HashMap<uint, Zed.AgentSession> agent_session_by_process_id = new Gee.HashMap<uint, Zed.AgentSession> ();
-		private Gee.HashMap<uint, uint> script_id_by_process_id = new Gee.HashMap<uint, uint> ();
+		private Zed.FruityHostSessionBackend fruity;
 
 		protected override async void destroy () {
-			var agent_sessions = agent_session_by_process_id.values.to_array ();
-			foreach (var agent_session in agent_sessions) {
-				try {
-					yield agent_session.close ();
-				} catch (IOError e) {
-				}
+			foreach (var device in devices) {
+				yield device.close ();
 			}
+			devices.clear ();
 
-			if (provider != null) {
-				yield provider.close ();
-				provider = null;
+			if (fruity != null) {
+				yield fruity.stop ();
+				fruity = null;
 			}
-			host_session = null;
-
-			process_id_by_agent_session_id.clear ();
-			agent_session_by_process_id.clear ();
-			script_id_by_process_id.clear ();
-
-#if !WINDOWS
-			if (server != null) {
-				server.destroy ();
-				server = null;
-			}
-#endif
 		}
 
-		public async string enumerate_processes () throws IOError {
-			var host_session = yield obtain_host_session ();
+		private async void ensure_devices () throws IOError {
+			if (devices.size > 0)
+				return;
+			add_device (new LocalDevice (last_device_id++));
+
+			fruity = new Zed.FruityHostSessionBackend ();
+			fruity.provider_available.connect ((provider) => {
+				var device = new Device (last_device_id++, provider.name, provider);
+				add_device (device);
+				devices_changed ();
+			});
+			fruity.provider_unavailable.connect ((provider) => {
+				foreach (var device in devices) {
+					if (device.provider == provider) {
+						device.close ();
+						devices.remove (device);
+						break;
+					}
+				}
+				devices_changed ();
+			});
+			yield fruity.start ();
+		}
+
+		private void add_device (Device device) {
+			devices.add (device);
+
+			var device_id = device.id;
+			device.detach.connect ((pid) => detach (device_id, pid));
+			device.message.connect ((pid, text, data) => message (device_id, pid, text, data));
+		}
+
+		public async string enumerate_devices () throws IOError {
+			yield ensure_devices ();
 
 			var builder = new Json.Builder ();
 			builder.begin_array ();
-			foreach (var pi in yield host_session.enumerate_processes ()) {
+			foreach (var device in devices) {
 				builder.begin_object ();
-				builder.set_member_name ("pid").add_int_value (pi.pid);
-				builder.set_member_name ("name").add_string_value (pi.name);
+				builder.set_member_name ("id").add_int_value (device.id);
+				builder.set_member_name ("name").add_string_value (device.name);
 				builder.end_object ();
 			}
 			builder.end_array ();
@@ -57,76 +66,193 @@ namespace CloudSpy {
 			return generator.to_data (null);
 		}
 
-		public async void attach_to (uint pid, string source) throws IOError {
-			var agent_session = yield obtain_agent_session (pid);
-			var script_id = yield agent_session.create_script (source);
-			yield agent_session.load_script (script_id);
+		public async string enumerate_processes (uint device_id) throws IOError {
+			return yield get_device_by_id (device_id).enumerate_processes ();
+		}
 
-			if (script_id_by_process_id.has_key (pid)) {
-				try {
-					yield detach_from (pid);
-				} catch (IOError e) {
-				}
+		public async void attach_to (uint device_id, uint pid, string source) throws IOError {
+			yield get_device_by_id (device_id).attach_to (pid, source);
+		}
+
+		public async void detach_from (uint device_id, uint pid) throws IOError {
+			yield get_device_by_id (device_id).detach_from (pid);
+		}
+
+		private Device get_device_by_id (uint device_id) throws IOError {
+			foreach (var device in devices) {
+				if (device.id == device_id)
+					return device;
 			}
 
-			script_id_by_process_id[pid] = script_id.handle;
+			throw new IOError.FAILED ("invalid device id");
 		}
 
-		public async void detach_from (uint pid) throws IOError {
-			uint script_id;
-			if (!script_id_by_process_id.unset (pid, out script_id))
-				throw new IOError.FAILED ("no script associated with pid %u".printf (pid));
+		protected class Device {
+			public uint id {
+				get;
+				private set;
+			}
 
-			var agent_session = yield obtain_agent_session (pid);
-			yield agent_session.destroy_script (Zed.AgentScriptId (script_id));
-		}
+			public string name {
+				get;
+				private set;
+			}
 
-		protected async Zed.HostSession obtain_host_session () throws IOError {
-			if (host_session == null) {
-#if !WINDOWS
-				if (server == null)
-					server = new Server ();
-				provider = new Zed.TcpHostSessionProvider.for_address (server.address);
-#else
-				provider = new Zed.WindowsHostSessionProvider ();
-#endif
+			public Zed.HostSessionProvider provider {
+				get;
+				private set;
+			}
+
+			public signal void detach (uint pid);
+			public signal void message (uint pid, string text, Variant? data);
+
+			private Zed.HostSession host_session;
+			private Gee.HashMap<uint, Zed.AgentSession> agent_by_pid = new Gee.HashMap<uint, Zed.AgentSession> ();
+			private Gee.HashMap<uint, uint> pid_by_agent_id = new Gee.HashMap<uint, uint> ();
+			private Gee.HashMap<uint, uint> script_by_pid = new Gee.HashMap<uint, uint> ();
+
+			public Device (uint id, string name, Zed.HostSessionProvider provider) {
+				this.id = id;
+				this.name = name;
+				this.provider = provider;
+
 				provider.agent_session_closed.connect ((sid, error) => {
 					uint pid;
-					if (process_id_by_agent_session_id.unset (sid.handle, out pid)) {
-						agent_session_by_process_id.unset (pid);
-						script_id_by_process_id.unset (pid);
-
-						detach (pid);
+					if (pid_by_agent_id.unset (sid.handle, out pid)) {
+						agent_by_pid.unset (pid);
+						if (script_by_pid.unset (pid))
+							detach (pid);
 					}
 				});
-				host_session = yield provider.create ();
 			}
 
-			return host_session;
+			public virtual async void close () {
+				var pids = script_by_pid.keys.to_array ();
+				var agents = agent_by_pid.values.to_array ();
+				agent_by_pid.clear ();
+				pid_by_agent_id.clear ();
+				script_by_pid.clear ();
+
+				foreach (var pid in pids)
+					detach (pid);
+
+				foreach (var agent in agents) {
+					try {
+						yield agent.close ();
+					} catch (IOError e) {
+					}
+				}
+
+				host_session = null;
+			}
+
+			public async string enumerate_processes () throws IOError {
+				var host = yield obtain_host_session ();
+
+				var builder = new Json.Builder ();
+				builder.begin_array ();
+				foreach (var pi in yield host.enumerate_processes ()) {
+					builder.begin_object ();
+					builder.set_member_name ("pid").add_int_value (pi.pid);
+					builder.set_member_name ("name").add_string_value (pi.name);
+					builder.end_object ();
+				}
+				builder.end_array ();
+				var generator = new Json.Generator ();
+				generator.set_root (builder.get_root ());
+				return generator.to_data (null);
+			}
+
+			public async void attach_to (uint pid, string source) throws IOError {
+				var agent = yield obtain_agent_session (pid);
+				var script = yield agent.create_script (source);
+				yield agent.load_script (script);
+
+				if (script_by_pid.has_key (pid)) {
+					try {
+						yield detach_from (pid);
+					} catch (IOError e) {
+					}
+				}
+
+				script_by_pid[pid] = script.handle;
+			}
+
+			public async void detach_from (uint pid) throws IOError {
+				uint handle;
+				if (!script_by_pid.unset (pid, out handle))
+					throw new IOError.FAILED ("no script associated with pid %u".printf (pid));
+
+				var agent = yield obtain_agent_session (pid);
+				yield agent.destroy_script (Zed.AgentScriptId (handle));
+			}
+
+			protected async Zed.HostSession obtain_host_session () throws IOError {
+				if (host_session == null) {
+					host_session = yield provider.create ();
+				}
+
+				return host_session;
+			}
+
+			protected async Zed.AgentSession obtain_agent_session (uint pid) throws IOError {
+				yield obtain_host_session ();
+
+				var agent = agent_by_pid[pid];
+				if (agent == null) {
+					var agent_id = yield host_session.attach_to (pid);
+					agent = yield provider.obtain_agent_session (agent_id);
+					agent.message_from_script.connect ((sid, text, data) => {
+						Variant data_value = null;
+						if (data.length > 0) {
+							void * data_copy_raw = Memory.dup (data, data.length);
+							unowned uint8[data.length] data_copy = (uint8[]) data_copy_raw;
+							data_copy.length = data.length;
+							data_value = Variant.new_from_data<uint8[]> (new VariantType ("ay"), data_copy, true);
+						}
+						message (pid, text, data_value);
+					});
+					pid_by_agent_id[agent_id.handle] = pid;
+					agent_by_pid[pid] = agent;
+				}
+
+				return agent;
+			}
 		}
 
-		protected async Zed.AgentSession obtain_agent_session (uint pid) throws IOError {
-			yield obtain_host_session ();
+		protected class LocalDevice : Device {
+#if !WINDOWS
+			private Server server;
 
-			var agent_session = agent_session_by_process_id[pid];
-			if (agent_session == null) {
-				var agent_session_id = yield host_session.attach_to (pid);
-				agent_session = yield provider.obtain_agent_session (agent_session_id);
-				agent_session.message_from_script.connect ((sid, text, data) => {
-                                        Variant data_value = null;
-                                        if (data.length > 0) {
-                                                void * data_copy_raw = Memory.dup (data, data.length);
-                                                unowned uint8[data.length] data_copy = (uint8[]) data_copy_raw;
-                                                data_copy.length = data.length;
-                                                data_value = Variant.new_from_data<uint8[]> (new VariantType ("ay"), data_copy, true);
-                                        }
-                                        message (pid, text, data_value);
-				});
-				process_id_by_agent_session_id[agent_session_id.handle] = pid;
-				agent_session_by_process_id[pid] = agent_session;
+			private Zed.TcpHostSessionProvider local_provider;
+#else
+			private Zed.WindowsHostSessionProvider local_provider;
+#endif
+
+			public LocalDevice (uint id) throws IOError {
+#if !WINDOWS
+				var s = new Server ();
+				var p = new Zed.TcpHostSessionProvider.for_address (s.address);
+#else
+				var p = new Zed.WindowsHostSessionProvider ();
+#endif
+				base (id, "Local System", p);
+
+				server = s;
+				local_provider = p;
 			}
 
-			return agent_session;
+			public override async void close () {
+				yield base.close ();
+
+				yield local_provider.close ();
+				local_provider = null;
+
+#if !WINDOWS
+				server.destroy ();
+				server = null;
+#endif
+			}
 		}
 
 #if !WINDOWS

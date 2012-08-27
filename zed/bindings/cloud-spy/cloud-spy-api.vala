@@ -1,12 +1,14 @@
 namespace CloudSpy {
 	[DBus (name = "com.appspot.cloud-spy.RootApi")]
 	public interface RootApi : Object {
-		public abstract async string enumerate_processes () throws IOError;
-		public abstract async void attach_to (uint pid, string source) throws IOError;
-		public abstract async void detach_from (uint pid) throws IOError;
+		public abstract async string enumerate_devices () throws IOError;
+		public abstract async string enumerate_processes (uint device_id) throws IOError;
+		public abstract async void attach_to (uint device_id, uint pid, string source) throws IOError;
+		public abstract async void detach_from (uint device_id, uint pid) throws IOError;
 
-		public signal void detach (uint pid);
-		public signal void message (uint pid, string text, Variant data);
+		public signal void devices_changed ();
+		public signal void detach (uint device_id, uint pid);
+		public signal void message (uint device_id, uint pid, string text, Variant? data);
 	}
 
 	public class Dispatcher : GLib.Object {
