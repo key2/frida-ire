@@ -238,7 +238,9 @@ namespace CloudSpy {
 #endif
 				base (id, "Local System", p);
 
+#if !WINDOWS
 				server = s;
+#endif
 				local_provider = p;
 			}
 
