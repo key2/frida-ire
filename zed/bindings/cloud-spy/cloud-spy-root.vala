@@ -159,12 +159,26 @@ namespace CloudSpy {
 					builder.begin_object ();
 					builder.set_member_name ("pid").add_int_value (pi.pid);
 					builder.set_member_name ("name").add_string_value (pi.name);
+					append_image ("small_icon", pi.small_icon, builder);
+					append_image ("large_icon", pi.large_icon, builder);
 					builder.end_object ();
 				}
 				builder.end_array ();
 				var generator = new Json.Generator ();
 				generator.set_root (builder.get_root ());
 				return generator.to_data (null);
+			}
+
+			private static void append_image (string member_name, Zed.ImageData data, Json.Builder builder) {
+				if (data.width == 0)
+					return;
+				var image = builder.set_member_name (member_name);
+				image.begin_object ();
+				image.set_member_name ("width").add_int_value (data.width);
+				image.set_member_name ("height").add_int_value (data.height);
+				image.set_member_name ("rowstride").add_int_value (data.rowstride);
+				image.set_member_name ("pixels").add_string_value (data.pixels);
+				image.end_object ();
 			}
 
 			public async void attach_to (uint pid, string source) throws IOError {
