@@ -111,6 +111,10 @@
 						});
 					}
 					send({ event: 'resolve', name: 'connect', impl: connectImpl });
+
+					recv(function(message) {
+						send({ event: 'recv-ack', got: message })
+					});
 				};
 				var rawSource = source.toString();
 				var rawBody = rawSource.substring(rawSource.indexOf("{") + 1, rawSource.lastIndexOf("}"));
@@ -136,6 +140,9 @@
 							addEvent("Failed to resolve " + payload.name);
 					} else if (payload.event == 'connect') {
 						addEvent("connect(fd=" + payload.fd + " ip=" + payload.ip + " port=" + payload.port + ")");
+					} else {
+						addEvent("Unhandled message: " + payload.event);
+						console.log(payload);
 					}
 				}
 			});

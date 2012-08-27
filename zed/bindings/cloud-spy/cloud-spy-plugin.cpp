@@ -304,6 +304,18 @@ cloud_spy_init_npvariant_with_string (NPVariant * var, const gchar * str)
   STRINGN_TO_NPVARIANT (str_copy, len, *var);
 }
 
+gchar *
+cloud_spy_npstring_to_cstring (const NPString * s)
+{
+  gchar * str;
+
+  str = static_cast<gchar *> (g_malloc (s->UTF8Length + 1));
+  memcpy (str, s->UTF8Characters, s->UTF8Length);
+  str[s->UTF8Length] = '\0';
+
+  return str;
+}
+
 void
 cloud_spy_init_npvariant_with_other (NPVariant * var, const NPVariant * other)
 {

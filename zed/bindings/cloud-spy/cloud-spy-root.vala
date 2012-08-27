@@ -74,6 +74,10 @@ namespace CloudSpy {
 			yield get_device_by_id (device_id).attach_to (pid, source);
 		}
 
+		public async void post_message (uint device_id, uint pid, string message) throws IOError {
+			yield get_device_by_id (device_id).post_message (pid, message);
+		}
+
 		public async void detach_from (uint device_id, uint pid) throws IOError {
 			yield get_device_by_id (device_id).detach_from (pid);
 		}
@@ -176,6 +180,13 @@ namespace CloudSpy {
 				}
 
 				script_by_pid[pid] = script.handle;
+			}
+
+			public async void post_message (uint pid, string message) throws IOError {
+				if (!script_by_pid.has_key (pid))
+					throw new IOError.FAILED ("no script associated with pid %u".printf (pid));
+				var agent = yield obtain_agent_session (pid);
+				yield agent.post_message_to_script (Zed.AgentScriptId (script_by_pid[pid]), message);
 			}
 
 			public async void detach_from (uint pid) throws IOError {

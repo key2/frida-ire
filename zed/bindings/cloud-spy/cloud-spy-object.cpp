@@ -69,7 +69,7 @@ static void cloud_spy_object_invoke_ready (GObject * source_object, GAsyncResult
 static gboolean cloud_spy_object_do_get_property (gpointer data);
 static bool cloud_spy_object_add_event_listener (NPObject * npobj, const NPVariant * args, uint32_t arg_count, NPVariant * result);
 
-static GVariant * cloud_spy_object_argument_list_to_gvariant (const NPVariant * args, guint arg_count, GError ** err);
+static GVariant * cloud_spy_object_argument_list_to_gvariant (CloudSpyObject * self, const NPVariant * args, guint arg_count, GError ** err);
 static void cloud_spy_object_return_value_to_npvariant (CloudSpyObject * self, GVariant * retval, NPVariant * result);
 static void cloud_spy_object_gvariant_to_npvariant (CloudSpyObject * self, GVariant * retval, NPVariant * result);
 
@@ -268,7 +268,7 @@ cloud_spy_object_invoke (NPObject * npobj, NPIdentifier name, const NPVariant * 
 
   self = reinterpret_cast<CloudSpyNPObject *> (npobj)->g_object;
 
-  arguments = cloud_spy_object_argument_list_to_gvariant (args, arg_count, &error);
+  arguments = cloud_spy_object_argument_list_to_gvariant (self, args, arg_count, &error);
   if (error != NULL)
     goto invoke_failed;
 
@@ -492,7 +492,7 @@ cloud_spy_object_add_event_listener (NPObject * npobj, const NPVariant * args, u
 }
 
 static GVariant *
-cloud_spy_object_argument_list_to_gvariant (const NPVariant * args, guint arg_count, GError ** err)
+cloud_spy_object_argument_list_to_gvariant (CloudSpyObject * self, const NPVariant * args, guint arg_count, GError ** err)
 {
   GVariantBuilder builder;
   guint i;
@@ -518,17 +518,30 @@ cloud_spy_object_argument_list_to_gvariant (const NPVariant * args, guint arg_co
       {
         gchar * str;
 
-        str = (gchar *) g_malloc (var->value.stringValue.UTF8Length + 1);
-        memcpy (str, var->value.stringValue.UTF8Characters, var->value.stringValue.UTF8Length);
-        str[var->value.stringValue.UTF8Length] = '\0';
-
+        str = cloud_spy_npstring_to_cstring (&var->value.stringValue);
         g_variant_builder_add_value (&builder, g_variant_new_string (str));
-
         g_free (str);
 
         break;
       }
       case NPVariantType_Object:
+      {
+        NPVariant result;
+
+        VOID_TO_NPVARIANT (result);
+        if (cloud_spy_nsfuncs->invoke (self->priv->npp, self->priv->json, cloud_spy_nsfuncs->getstringidentifier ("stringify"), var, 1, &result))
+        {
+          gchar * str;
+
+          str = cloud_spy_npstring_to_cstring (&result.value.stringValue);
+          g_variant_builder_add_value (&builder, g_variant_new_string (str));
+          g_free (str);
+
+          cloud_spy_nsfuncs->releasevariantvalue (&result);
+
+          break;
+        }
+      }
       case NPVariantType_Void:
       case NPVariantType_Null:
         goto invalid_type;
