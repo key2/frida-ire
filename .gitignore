@@ -41,6 +41,7 @@
 /zed/build/frida-ps3
 /zed/build/sdk-android
 /zed/build/sdk-ios
+/zed/build/sdk-linux-*
 /zed/build/sdk-mac*
 /zed/build/sdk-ps3
 /zed/build/tmp-android
