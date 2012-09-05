@@ -195,6 +195,8 @@ cloud_spy_promise_invoke (NPObject * npobj, NPIdentifier name, const NPVariant *
     }
 
     callback = cloud_spy_nsfuncs->retainobject (NPVARIANT_TO_OBJECT (args[0]));
+
+    g_mutex_lock (self->mutex);
     if (strcmp (function_name, "done") == 0)
       callbacks = self->on_success;
     else if (strcmp (function_name, "fail") == 0)
@@ -205,7 +207,6 @@ cloud_spy_promise_invoke (NPObject * npobj, NPIdentifier name, const NPVariant *
       callbacks = NULL;
     g_assert (callbacks != NULL);
 
-    g_mutex_lock (self->mutex);
     g_ptr_array_add (callbacks, callback);
     cloud_spy_promise_flush_unlocked (self);
     g_mutex_unlock (self->mutex);
