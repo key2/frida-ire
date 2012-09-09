@@ -6,7 +6,7 @@
 typedef struct _CloudSpyPromise CloudSpyPromise;
 typedef gint CloudSpyPromiseResult;
 
-typedef enum _CloudSpyPromiseResult
+enum _CloudSpyPromiseResult
 {
   CLOUD_SPY_PROMISE_PENDING,
   CLOUD_SPY_PROMISE_SUCCESS,
