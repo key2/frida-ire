@@ -11,7 +11,8 @@ lib_LTLIBRARIES = libcloud-spy-data.la libcloud-spy-codegen.la libcloud-spy.la
 
 libcloud_spy_codegen_la_SOURCES = \
 	cloud-spy-api.vala \
-	cloud-spy-root.vala
+	cloud-spy-root.vala \
+	cloud-spy-codegen.c
 libcloud_spy_codegen_la_CFLAGS = \
 	-w
 libcloud_spy_codegen_la_LDFLAGS = \
