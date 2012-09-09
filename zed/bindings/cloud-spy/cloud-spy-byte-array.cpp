@@ -1,5 +1,7 @@
 #include "cloud-spy-byte-array.h"
 
+#include <string.h>
+
 typedef struct _CloudSpyByteArray CloudSpyByteArray;
 
 struct _CloudSpyByteArray

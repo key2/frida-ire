@@ -2,6 +2,8 @@
 
 #include "cloud-spy-plugin.h"
 
+#include <string.h>
+
 static void cloud_spy_promise_deliver (CloudSpyPromise * self, CloudSpyPromiseResult result, const NPVariant * args, guint arg_count);
 static void cloud_spy_promise_flush (void * data);
 static void cloud_spy_promise_flush_unlocked (CloudSpyPromise * self);
