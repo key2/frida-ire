@@ -3,7 +3,9 @@ namespace CloudSpy {
 		private Gee.ArrayList<Device> devices = new Gee.ArrayList<Device> ();
 		private uint last_device_id = 1;
 
+#if !LINUX
 		private Zed.FruityHostSessionBackend fruity;
+#endif
 
 		protected override async void destroy () {
 			foreach (var device in devices) {
@@ -11,10 +13,12 @@ namespace CloudSpy {
 			}
 			devices.clear ();
 
+#if !LINUX
 			if (fruity != null) {
 				yield fruity.stop ();
 				fruity = null;
 			}
+#endif
 		}
 
 		private async void ensure_devices () throws IOError {
@@ -22,6 +26,7 @@ namespace CloudSpy {
 				return;
 			add_device (new LocalDevice (last_device_id++));
 
+#if !LINUX
 			fruity = new Zed.FruityHostSessionBackend ();
 			fruity.provider_available.connect ((provider) => {
 				var device = new Device (last_device_id++, provider.name, provider);
@@ -39,6 +44,7 @@ namespace CloudSpy {
 				devices_changed ();
 			});
 			yield fruity.start ();
+#endif
 		}
 
 		private void add_device (Device device) {
