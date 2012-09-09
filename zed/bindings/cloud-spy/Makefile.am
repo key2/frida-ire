@@ -31,7 +31,8 @@ libcloud_spy_codegen_la_VALAFLAGS = \
 	--pkg=gio-2.0 \
 	--pkg=json-glib-1.0 \
 	--pkg=zed-core \
-	--pkg=zed-interfaces
+	--pkg=zed-interfaces \
+	@ZED_VALAFLAGS@
 
 libcloud_spy_la_SOURCES = \
 	cloud-spy-plugin.h \
