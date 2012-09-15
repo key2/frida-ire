@@ -17,6 +17,7 @@
 .deps
 .libs
 .metadata
+/cloud-spy/chrome/plugin-linux.so
 /cloud-spy/chrome/plugin-mac.plugin/Contents/MacOS/libnpcsplugin.dylib
 /cloud-spy/chrome/plugin-windows.dll
 /zed/INSTALL
@@ -97,6 +98,7 @@
 /zed/src/core/fruity/fruity-property-list.c
 /zed/src/core/host-session-service.c
 /zed/src/core/linux/linjector.c
+/zed/src/core/linux/linux-host-session.c
 /zed/src/core/system.c
 /zed/src/core/tcp/tcp-host-session.c
 /zed/src/zed
