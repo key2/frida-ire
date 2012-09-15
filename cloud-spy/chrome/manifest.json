@@ -15,6 +15,7 @@
   ],
   "plugins": [
     { "path": "plugin-windows.dll", "public": true },
+    { "path": "plugin-linux.so", "public": true },
     { "path": "plugin-mac.plugin", "public": true }
   ]
 }
