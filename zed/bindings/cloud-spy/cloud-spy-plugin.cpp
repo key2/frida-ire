@@ -228,7 +228,7 @@ cloud_spy_root_object_destroy (gpointer data)
     cloud_spy_nsfuncs->releaseobject (obj);
 }
 
-char * OSCALL
+char *
 NP_GetMIMEDescription (void)
 {
   return cloud_spy_mime_description;

@@ -16,7 +16,7 @@
 
 G_BEGIN_DECLS
 
-char * OSCALL NP_GetMIMEDescription (void);
+char * NP_GetMIMEDescription (void);
 NPError OSCALL NP_GetValue (void * reserved, NPPVariable variable, void * value);
 NPError OSCALL NP_GetEntryPoints (NPPluginFuncs * pf);
 #ifdef HAVE_LINUX
