@@ -60,6 +60,13 @@ beach:
 }
 
 static void
+cloud_spy_startup (void)
+{
+  g_setenv ("G_DEBUG", "fatal-warnings:fatal-criticals", TRUE);
+  g_type_init ();
+}
+
+static void
 cloud_spy_init_logging (NPP instance)
 {
   if (cloud_spy_logging_instance != NULL)
@@ -125,6 +132,8 @@ cloud_spy_plugin_new (NPMIMEType plugin_type, NPP instance, uint16_t mode, int16
   (void) argv;
   (void) saved;
 
+  cloud_spy_nsfuncs->setvalue (instance, NPPVpluginWindowBool, NULL);
+
   G_LOCK (cloud_spy_plugin);
   g_hash_table_insert (cloud_spy_plugin_roots, instance, NULL);
   cloud_spy_init_logging (instance);
@@ -182,14 +191,11 @@ cloud_spy_plugin_get_value (NPP instance, NPPVariable variable, void * value)
 {
   (void) instance;
 
+  if (NP_GetValue (NULL, variable, value) == NPERR_NO_ERROR)
+    return NPERR_NO_ERROR;
+
   switch (variable)
   {
-    case NPPVpluginNameString:
-      *(static_cast<const char **> (value)) = "CloudSpy";
-      break;
-    case NPPVpluginDescriptionString:
-      *(static_cast<const char **> (value)) = "<a href=\"http://apps.facebook.com/cloud_spy/\">CloudSpy</a> plugin.";
-      break;
     case NPPVpluginScriptableNPObject:
     {
       NPObject * obj;
@@ -208,7 +214,7 @@ cloud_spy_plugin_get_value (NPP instance, NPPVariable variable, void * value)
       break;
     }
     default:
-      return NPERR_GENERIC_ERROR;
+      return NPERR_INVALID_PARAM;
   }
 
   return NPERR_NO_ERROR;
@@ -222,11 +228,39 @@ cloud_spy_root_object_destroy (gpointer data)
     cloud_spy_nsfuncs->releaseobject (obj);
 }
 
+char * OSCALL
+NP_GetMIMEDescription (void)
+{
+  return cloud_spy_mime_description;
+}
+
+NPError OSCALL
+NP_GetValue (void * reserved, NPPVariable variable, void * value)
+{
+  (void) reserved;
+
+  if (value == NULL)
+    return NPERR_INVALID_PARAM;
+
+  switch (variable)
+  {
+    case NPPVpluginNameString:
+      *(static_cast<const char **> (value)) = "CloudSpy";
+      break;
+    case NPPVpluginDescriptionString:
+      *(static_cast<const char **> (value)) = "<a href=\"http://apps.facebook.com/cloud_spy/\">CloudSpy</a> plugin.";
+      break;
+    default:
+      return NPERR_INVALID_PARAM;
+  }
+
+  return NPERR_NO_ERROR;
+}
+
 NPError OSCALL
 NP_GetEntryPoints (NPPluginFuncs * pf)
 {
-  g_setenv ("G_DEBUG", "fatal-warnings:fatal-criticals", TRUE);
-  g_type_init ();
+  cloud_spy_startup ();
 
   pf->version = (NP_VERSION_MAJOR << 8) | NP_VERSION_MINOR;
   pf->newp = cloud_spy_plugin_new;
@@ -239,16 +273,20 @@ NP_GetEntryPoints (NPPluginFuncs * pf)
 }
 
 NPError OSCALL
+#ifdef HAVE_LINUX
+NP_Initialize (NPNetscapeFuncs * nf, NPPluginFuncs * pf)
+#else
 NP_Initialize (NPNetscapeFuncs * nf)
+#endif
 {
   if (nf == NULL)
     return NPERR_INVALID_FUNCTABLE_ERROR;
 
-  if ((nf->version >> 8) > NP_VERSION_MAJOR)
-    return NPERR_INCOMPATIBLE_VERSION_ERROR;
-
-  g_setenv ("G_DEBUG", "fatal-warnings:fatal-criticals", TRUE);
-  g_type_init ();
+#ifdef HAVE_LINUX
+  NP_GetEntryPoints (pf);
+#else
+  cloud_spy_startup ();
+#endif
 
   cloud_spy_object_type_init ();
 
@@ -287,12 +325,6 @@ NP_Shutdown (void)
   cloud_spy_object_type_deinit ();
 
   return NPERR_NO_ERROR;
-}
-
-char *
-NP_GetMIMEDescription (void)
-{
-  return cloud_spy_mime_description;
 }
 
 void

@@ -4,8 +4,23 @@ else
 SERVER := $(top_builddir)/../../frida-ire-universal/zed-server
 endif
 
+if OS_LINUX
+deploy: all
+	cp .libs/libcloud-spy.so.0.0.0 ../../../cloud-spy/chrome/plugin-linux.so
+endif
+
+if OS_MAC
 deploy: all
 	cp .libs/libcloud-spy.0.dylib ../../../cloud-spy/chrome/plugin-mac.plugin/Contents/MacOS/libnpcsplugin.dylib
+endif
+
+extra_ldflags =
+
+if OS_LINUX
+extra_ldflags += -Wl,--version-script -Wl,cloud-spy.version
+else
+extra_ldflags += -export-symbols-regex "^(NP_GetMIMEDescription|NP_GetValue|NP_GetEntryPoints|NP_Initialize|NP_Shutdown)$$"
+endif
 
 lib_LTLIBRARIES = libcloud-spy-data.la libcloud-spy-codegen.la libcloud-spy.la
 
@@ -49,9 +64,9 @@ libcloud_spy_la_SOURCES = \
 libcloud_spy_la_CFLAGS = \
 	-w
 libcloud_spy_la_LDFLAGS = \
-	-export-symbols-regex "^(NP_GetEntryPoints|NP_Initialize|NP_Shutdown|NP_GetMIMEDescription)$$" \
 	$(ZED_LDFLAGS) \
-	$(CLOUD_SPY_LDFLAGS)
+	$(CLOUD_SPY_LDFLAGS) \
+	$(extra_ldflags)
 libcloud_spy_la_LIBADD = \
 	$(top_builddir)/src/libzed-core.la \
 	$(builddir)/libcloud-spy-data.la \
