@@ -132,6 +132,24 @@ cloud_spy_plugin_new (NPMIMEType plugin_type, NPP instance, uint16_t mode, int16
   (void) argv;
   (void) saved;
 
+#ifdef HAVE_MAC
+  NPBool supports_core_graphics;
+  if (cloud_spy_nsfuncs->getvalue (instance, NPNVsupportsCoreGraphicsBool,
+      &supports_core_graphics) == NPERR_NO_ERROR && supports_core_graphics)
+  {
+    cloud_spy_nsfuncs->setvalue (instance, NPPVpluginDrawingModel,
+        reinterpret_cast<void *> (NPDrawingModelCoreGraphics));
+  }
+
+  NPBool supports_cocoa_events;
+  if (cloud_spy_nsfuncs->getvalue (instance, NPNVsupportsCocoaBool,
+      &supports_cocoa_events) == NPERR_NO_ERROR && supports_cocoa_events)
+  {
+    cloud_spy_nsfuncs->setvalue (instance, NPPVpluginEventModel,
+        reinterpret_cast<void *> (NPEventModelCocoa));
+  }
+#endif
+
   cloud_spy_nsfuncs->setvalue (instance, NPPVpluginWindowBool, NULL);
 
   G_LOCK (cloud_spy_plugin);
