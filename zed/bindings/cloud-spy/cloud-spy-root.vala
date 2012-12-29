@@ -29,7 +29,7 @@ namespace CloudSpy {
 #if !LINUX
 			fruity = new Zed.FruityHostSessionBackend ();
 			fruity.provider_available.connect ((provider) => {
-				var device = new Device (last_device_id++, provider.name, provider);
+				var device = new Device (last_device_id++, provider.name, provider.kind, provider);
 				add_device (device);
 				devices_changed ();
 			});
@@ -64,6 +64,7 @@ namespace CloudSpy {
 				builder.begin_object ();
 				builder.set_member_name ("id").add_int_value (device.id);
 				builder.set_member_name ("name").add_string_value (device.name);
+				builder.set_member_name ("type").add_string_value (device.kind);
 				builder.end_object ();
 			}
 			builder.end_array ();
@@ -108,6 +109,11 @@ namespace CloudSpy {
 				private set;
 			}
 
+			public string kind {
+				get;
+				private set;
+			}
+
 			public Zed.HostSessionProvider provider {
 				get;
 				private set;
@@ -121,9 +127,20 @@ namespace CloudSpy {
 			private Gee.HashMap<uint, uint> pid_by_agent_id = new Gee.HashMap<uint, uint> ();
 			private Gee.HashMap<uint, uint> script_by_pid = new Gee.HashMap<uint, uint> ();
 
-			public Device (uint id, string name, Zed.HostSessionProvider provider) {
+			public Device (uint id, string name, Zed.HostSessionProviderKind kind, Zed.HostSessionProvider provider) {
 				this.id = id;
 				this.name = name;
+				switch (kind) {
+					case Zed.HostSessionProviderKind.LOCAL_SYSTEM:
+						this.kind = "local";
+						break;
+					case Zed.HostSessionProviderKind.LOCAL_TETHER:
+						this.kind = "tether";
+						break;
+					case Zed.HostSessionProviderKind.REMOTE_SYSTEM:
+						this.kind = "remote";
+						break;
+				}
 				this.provider = provider;
 
 				provider.agent_session_closed.connect ((sid, error) => {
@@ -267,7 +284,7 @@ namespace CloudSpy {
 #else
 				var p = new Zed.WindowsHostSessionProvider ();
 #endif
-				base (id, "Local System", p);
+				base (id, "Local System", Zed.HostSessionProviderKind.LOCAL_SYSTEM, p);
 
 #if !WINDOWS
 				server = s;
