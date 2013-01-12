@@ -37,6 +37,10 @@
 /zed/bindings/cloud-spy/cloud-spy.vapi
 /zed/bindings/pyfrida/Makefile
 /zed/bindings/pyfrida/Makefile.in
+/zed/bindings/pyfrida/pyfrida-data*
+/zed/bindings/pyfrida/pyfrida.h
+/zed/bindings/pyfrida/pyfrida.vapi
+/zed/bindings/pyfrida/session-manager.c
 /zed/build/frida-android
 /zed/build/frida-ios
 /zed/build/frida-linux-*
