@@ -3,6 +3,9 @@
 #include <gum/gum.h>
 #include <Python.h>
 
+static PyObject * json_loads;
+static PyObject * json_dumps;
+
 static GMainLoop * main_loop;
 static GMainContext * main_context;
 
@@ -522,15 +525,22 @@ PyScript_unload (PyScript * self, PyObject * args)
 static PyObject *
 PyScript_post_message (PyScript * self, PyObject * args)
 {
-  const char * message;
+  PyObject * message_object, * message;
   GError * error = NULL;
 
-  if (!PyArg_ParseTuple (args, "s", &message))
+  if (!PyArg_ParseTuple (args, "O", &message_object))
+    return NULL;
+
+  message = PyObject_CallFunction (json_dumps, "O", message_object);
+  if (message == NULL)
     return NULL;
 
   Py_BEGIN_ALLOW_THREADS
-  script_post_message (self->handle, message, &error);
+  script_post_message (self->handle, PyString_AsString (message), &error);
   Py_END_ALLOW_THREADS
+
+  Py_DECREF (message);
+
   if (error != NULL)
   {
     PyErr_SetString (PyExc_SystemError, error->message);
@@ -618,18 +628,26 @@ PyScript_on_message (PyScript * self, const gchar * message, const gchar * data,
   if (g_object_get_data (G_OBJECT (handle), "pyobject") == self)
   {
     GList * callbacks, * cur;
+    PyObject * args, * message_object;
 
     g_list_foreach (self->on_message, (GFunc) Py_IncRef, NULL);
     callbacks = g_list_copy (self->on_message);
 
+    message_object = PyObject_CallFunction (json_loads, "s", message);
+    g_assert (message_object != NULL);
+    args = Py_BuildValue ("Os#", message_object, data, data_size);
+    Py_DECREF (message_object);
+
     for (cur = callbacks; cur != NULL; cur = cur->next)
     {
-      PyObject * result = PyObject_CallFunction ((PyObject *) cur->data, "ss#", message, data, data_size);
+      PyObject * result = PyObject_CallObject ((PyObject *) cur->data, args);
       if (result == NULL)
         PyErr_Clear ();
       else
         Py_DECREF (result);
     }
+
+    Py_DECREF (args);
 
     g_list_free_full (callbacks, (GDestroyNotify) Py_DecRef);
   }
@@ -651,9 +669,15 @@ run_main_loop (gpointer data)
 PyMODINIT_FUNC
 initfrida (void)
 {
+  PyObject * json;
   PyObject * module;
 
   PyEval_InitThreads ();
+
+  json = PyImport_ImportModule ("json");
+  json_loads = PyObject_GetAttrString (json, "loads");
+  json_dumps = PyObject_GetAttrString (json, "dumps");
+  Py_DECREF (json);
 
   g_type_init ();
   gum_init_with_features ((GumFeatureFlags) (GUM_FEATURE_ALL & ~GUM_FEATURE_SYMBOL_LOOKUP));
