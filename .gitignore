@@ -35,6 +35,12 @@
 /zed/bindings/cloud-spy/cloud-spy-root.c
 /zed/bindings/cloud-spy/cloud-spy.h
 /zed/bindings/cloud-spy/cloud-spy.vapi
+/zed/bindings/pyfrida/Makefile
+/zed/bindings/pyfrida/Makefile.in
+/zed/bindings/pyfrida/pyfrida-data*
+/zed/bindings/pyfrida/pyfrida.h
+/zed/bindings/pyfrida/pyfrida.vapi
+/zed/bindings/pyfrida/session-manager.c
 /zed/build/frida-android
 /zed/build/frida-ios
 /zed/build/frida-linux-*
@@ -99,6 +105,7 @@
 /zed/src/core/host-session-service.c
 /zed/src/core/linux/linjector.c
 /zed/src/core/linux/linux-host-session.c
+/zed/src/core/session-manager.c
 /zed/src/core/system.c
 /zed/src/core/tcp/tcp-host-session.c
 /zed/src/zed
