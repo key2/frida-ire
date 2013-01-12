@@ -285,10 +285,10 @@ public class Session : Object {
 		return task.start_and_wait_for_completion ();
 	}
 
-	private void on_message_from_script (Zed.AgentScriptId sid, string msg) {
+	private void on_message_from_script (Zed.AgentScriptId sid, string message, uint8[] data) {
 		var script = script_by_id[sid.handle];
 		if (script != null)
-			script.message (msg);
+			script.message (message, data);
 	}
 
 	public void _release_script (Zed.AgentScriptId sid) {
@@ -361,7 +361,7 @@ public class Script : Object {
 
 	private MainContext main_context;
 
-	public signal void message (string msg);
+	public signal void message (string message, uint8[] data);
 
 	public Script (Session session, Zed.AgentScriptId script_id) {
 		this.session = session;
@@ -377,9 +377,9 @@ public class Script : Object {
 		(create<UnloadTask> () as UnloadTask).start_and_wait_for_completion ();
 	}
 
-	public void post_message (string msg) throws Error {
+	public void post_message (string message) throws Error {
 		var task = create<PostMessageTask> () as PostMessageTask;
-		task.msg = msg;
+		task.message = message;
 		task.start_and_wait_for_completion ();
 	}
 
@@ -400,10 +400,10 @@ public class Script : Object {
 	}
 
 	private class PostMessageTask : ScriptTask<void> {
-		public string msg;
+		public string message;
 
 		protected override async void perform_operation () throws Error {
-			yield parent.session.internal_session.post_message_to_script (parent.script_id, msg);
+			yield parent.session.internal_session.post_message_to_script (parent.script_id, message);
 		}
 	}
 

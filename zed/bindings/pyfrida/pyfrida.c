@@ -23,6 +23,7 @@ struct _PySession
   PyObject_HEAD
 
   Session * handle;
+  GList * on_close;
 };
 
 struct _PyScript
@@ -30,19 +31,23 @@ struct _PyScript
   PyObject_HEAD
 
   Script * handle;
+  GList * on_message;
 };
 
 static int PySessionManager_init (PySessionManager * self, PyObject * args, PyObject * kwds);
 static void PySessionManager_dealloc (PySessionManager * self);
 static PyObject * PySessionManager_obtain_session_for (PySessionManager * self, PyObject * args);
 
+static PyObject * PySession_from_handle (Session * handle);
 static int PySession_init (PySession * self, PyObject * args, PyObject * kwds);
 static void PySession_dealloc (PySession * self);
 static PyObject * PySession_close (PySession * self, PyObject * args);
 static PyObject * PySession_create_script (PySession * self, PyObject * args);
 static PyObject * PySession_on (PySession * self, PyObject * args);
 static PyObject * PySession_off (PySession * self, PyObject * args);
+static void PySession_on_close (PySession * self, Session * handle);
 
+static PyObject * PyScript_from_handle (Script * handle);
 static int PyScript_init (PyScript * self, PyObject * args, PyObject * kwds);
 static void PyScript_dealloc (PyScript * self);
 static PyObject * PyScript_load (PyScript * self, PyObject * args);
@@ -50,6 +55,7 @@ static PyObject * PyScript_unload (PyScript * self, PyObject * args);
 static PyObject * PyScript_post_message (PyScript * self, PyObject * args);
 static PyObject * PyScript_on (PyScript * self, PyObject * args);
 static PyObject * PyScript_off (PyScript * self, PyObject * args);
+static void PyScript_on_message (PyScript * self, const gchar * message, const gchar * data, gint data_size, Script * handle);
 
 static PyMethodDef PySessionManager_methods[] =
 {
@@ -200,6 +206,22 @@ static PyTypeObject PyScriptType =
 };
 
 
+static gboolean
+PyFrida_parse_signal_method_args (PyObject * args, const char ** signal, PyObject ** callback)
+{
+  if (!PyArg_ParseTuple (args, "sO", signal, callback))
+    return FALSE;
+
+  if (!PyCallable_Check (*callback))
+  {
+    PyErr_SetString (PyExc_TypeError, "second argument must be callable");
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+
 static int
 PySessionManager_init (PySessionManager * self, PyObject * args, PyObject * kwds)
 {
@@ -220,12 +242,13 @@ PySessionManager_obtain_session_for (PySessionManager * self, PyObject * args)
   long pid;
   GError * error = NULL;
   Session * handle;
-  PyObject * session, * no_args;
 
   if (!PyArg_ParseTuple (args, "l", &pid))
     return NULL;
 
+  Py_BEGIN_ALLOW_THREADS
   handle = session_manager_obtain_session_for (self->handle, (guint) pid, &error);
+  Py_END_ALLOW_THREADS
   if (error != NULL)
   {
     PyErr_SetString (PyExc_SystemError, error->message);
@@ -233,34 +256,63 @@ PySessionManager_obtain_session_for (PySessionManager * self, PyObject * args)
     return NULL;
   }
 
-  no_args = PyTuple_New (0);
-  session = PyObject_CallObject ((PyObject *) &PySessionType, no_args);
-  Py_DECREF (no_args);
-  ((PySession *) session)->handle = handle;
+  return PySession_from_handle (handle);
+}
+
+
+static PyObject *
+PySession_from_handle (Session * handle)
+{
+  PyObject * session;
+
+  session = g_object_get_data (G_OBJECT (handle), "pyobject");
+  if (session == NULL)
+  {
+    session = PyObject_CallFunction ((PyObject *) &PySessionType, NULL);
+    ((PySession *) session)->handle = handle;
+    g_object_set_data (G_OBJECT (handle), "pyobject", session);
+  }
+  else
+  {
+    g_object_unref (handle);
+    Py_INCREF (session);
+  }
 
   return session;
 }
-
 
 static int
 PySession_init (PySession * self, PyObject * args, PyObject * kwds)
 {
   self->handle = NULL;
+  self->on_close = NULL;
   return 0;
 }
 
 static void
 PySession_dealloc (PySession * self)
 {
+  if (self->on_close != NULL)
+  {
+    g_signal_handlers_disconnect_by_func (self->handle, PySession_on_close, self);
+    g_list_free_full (self->on_close, (GDestroyNotify) Py_DecRef);
+  }
+
   if (self->handle != NULL)
+  {
+    g_object_set_data (G_OBJECT (self->handle), "pyobject", NULL);
     g_object_unref (self->handle);
+  }
+
   self->ob_type->tp_free ((PyObject *) self);
 }
 
 static PyObject *
 PySession_close (PySession * self, PyObject * args)
 {
+  Py_BEGIN_ALLOW_THREADS
   session_close (self->handle);
+  Py_END_ALLOW_THREADS
   Py_RETURN_NONE;
 }
 
@@ -270,12 +322,13 @@ PySession_create_script (PySession * self, PyObject * args)
   const char * source;
   GError * error = NULL;
   Script * handle;
-  PyObject * script, * no_args;
 
   if (!PyArg_ParseTuple (args, "s", &source))
     return NULL;
 
+  Py_BEGIN_ALLOW_THREADS
   handle = session_create_script (self->handle, source, &error);
+  Py_END_ALLOW_THREADS
   if (error != NULL)
   {
     PyErr_SetString (PyExc_SystemError, error->message);
@@ -283,41 +336,150 @@ PySession_create_script (PySession * self, PyObject * args)
     return NULL;
   }
 
-  no_args = PyTuple_New (0);
-  script = PyObject_CallObject ((PyObject *) &PyScriptType, no_args);
-  Py_DECREF (no_args);
-  ((PyScript *) script)->handle = handle;
-
-  return script;
+  return PyScript_from_handle (handle);
 }
 
 static PyObject *
 PySession_on (PySession * self, PyObject * args)
 {
-  /* FIXME */
+  const char * signal;
+  PyObject * callback;
+
+  if (!PyFrida_parse_signal_method_args (args, &signal, &callback))
+    return NULL;
+
+  if (strcmp (signal, "close") == 0)
+  {
+    if (self->on_close == NULL)
+    {
+      g_signal_connect_swapped (self->handle, "closed", G_CALLBACK (PySession_on_close), self);
+    }
+
+    Py_INCREF (callback);
+    self->on_close = g_list_append (self->on_close, callback);
+  }
+  else
+  {
+    PyErr_SetString (PyExc_NotImplementedError, "unsupported signal");
+    return NULL;
+  }
+
   Py_RETURN_NONE;
 }
 
 static PyObject *
 PySession_off (PySession * self, PyObject * args)
 {
-  /* FIXME */
+  const char * signal;
+  PyObject * callback;
+
+  if (!PyFrida_parse_signal_method_args (args, &signal, &callback))
+    return NULL;
+
+  if (strcmp (signal, "close") == 0)
+  {
+    GList * entry;
+
+    entry = g_list_find (self->on_close, callback);
+    if (entry != NULL)
+    {
+      self->on_close = g_list_delete_link (self->on_close, entry);
+      Py_DECREF (callback);
+    }
+    else
+    {
+      PyErr_SetString (PyExc_ValueError, "unknown callback");
+      return NULL;
+    }
+
+    if (self->on_close == NULL)
+    {
+      g_signal_handlers_disconnect_by_func (self->handle, PySession_on_close, self);
+    }
+  }
+  else
+  {
+    PyErr_SetString (PyExc_NotImplementedError, "unsupported signal");
+    return NULL;
+  }
+
   Py_RETURN_NONE;
 }
 
+static void
+PySession_on_close (PySession * self, Session * handle)
+{
+  PyGILState_STATE gstate;
+
+  gstate = PyGILState_Ensure ();
+
+  if (g_object_get_data (G_OBJECT (handle), "pyobject") == self)
+  {
+    GList * callbacks, * cur;
+
+    g_list_foreach (self->on_close, (GFunc) Py_IncRef, NULL);
+    callbacks = g_list_copy (self->on_close);
+
+    for (cur = callbacks; cur != NULL; cur = cur->next)
+    {
+      PyObject * result = PyObject_CallFunction ((PyObject *) cur->data, NULL);
+      if (result == NULL)
+        PyErr_Clear ();
+      else
+        Py_DECREF (result);
+    }
+
+    g_list_free_full (callbacks, (GDestroyNotify) Py_DecRef);
+  }
+
+  PyGILState_Release (gstate);
+}
+
+
+static PyObject *
+PyScript_from_handle (Script * handle)
+{
+  PyObject * script;
+
+  script = g_object_get_data (G_OBJECT (handle), "pyobject");
+  if (script == NULL)
+  {
+    script = PyObject_CallFunction ((PyObject *) &PyScriptType, NULL);
+    ((PyScript *) script)->handle = handle;
+    g_object_set_data (G_OBJECT (handle), "pyobject", script);
+  }
+  else
+  {
+    g_object_unref (handle);
+    Py_INCREF (script);
+  }
+
+  return script;
+}
 
 static int
 PyScript_init (PyScript * self, PyObject * args, PyObject * kwds)
 {
   self->handle = NULL;
+  self->on_message = NULL;
   return 0;
 }
 
 static void
 PyScript_dealloc (PyScript * self)
 {
+  if (self->on_message != NULL)
+  {
+    g_signal_handlers_disconnect_by_func (self->handle, PyScript_on_message, self);
+    g_list_free_full (self->on_message, (GDestroyNotify) Py_DecRef);
+  }
+
   if (self->handle != NULL)
+  {
+    g_object_set_data (G_OBJECT (self->handle), "pyobject", NULL);
     g_object_unref (self->handle);
+  }
+
   self->ob_type->tp_free ((PyObject *) self);
 }
 
@@ -326,7 +488,9 @@ PyScript_load (PyScript * self, PyObject * args)
 {
   GError * error = NULL;
 
+  Py_BEGIN_ALLOW_THREADS
   script_load (self->handle, &error);
+  Py_END_ALLOW_THREADS
   if (error != NULL)
   {
     PyErr_SetString (PyExc_SystemError, error->message);
@@ -342,7 +506,9 @@ PyScript_unload (PyScript * self, PyObject * args)
 {
   GError * error = NULL;
 
+  Py_BEGIN_ALLOW_THREADS
   script_unload (self->handle, &error);
+  Py_END_ALLOW_THREADS
   if (error != NULL)
   {
     PyErr_SetString (PyExc_SystemError, error->message);
@@ -356,13 +522,15 @@ PyScript_unload (PyScript * self, PyObject * args)
 static PyObject *
 PyScript_post_message (PyScript * self, PyObject * args)
 {
-  const char * msg;
+  const char * message;
   GError * error = NULL;
 
-  if (!PyArg_ParseTuple (args, "s", &msg))
+  if (!PyArg_ParseTuple (args, "s", &message))
     return NULL;
 
-  script_post_message (self->handle, msg, &error);
+  Py_BEGIN_ALLOW_THREADS
+  script_post_message (self->handle, message, &error);
+  Py_END_ALLOW_THREADS
   if (error != NULL)
   {
     PyErr_SetString (PyExc_SystemError, error->message);
@@ -376,15 +544,97 @@ PyScript_post_message (PyScript * self, PyObject * args)
 static PyObject *
 PyScript_on (PyScript * self, PyObject * args)
 {
-  /* FIXME */
+  const char * signal;
+  PyObject * callback;
+
+  if (!PyFrida_parse_signal_method_args (args, &signal, &callback))
+    return NULL;
+
+  if (strcmp (signal, "message") == 0)
+  {
+    if (self->on_message == NULL)
+    {
+      g_signal_connect_swapped (self->handle, "message", G_CALLBACK (PyScript_on_message), self);
+    }
+
+    Py_INCREF (callback);
+    self->on_message = g_list_append (self->on_message, callback);
+  }
+  else
+  {
+    PyErr_SetString (PyExc_NotImplementedError, "unsupported signal");
+    return NULL;
+  }
+
   Py_RETURN_NONE;
 }
 
 static PyObject *
 PyScript_off (PyScript * self, PyObject * args)
 {
-  /* FIXME */
+  const char * signal;
+  PyObject * callback;
+
+  if (!PyFrida_parse_signal_method_args (args, &signal, &callback))
+    return NULL;
+
+  if (strcmp (signal, "message") == 0)
+  {
+    GList * entry;
+
+    entry = g_list_find (self->on_message, callback);
+    if (entry != NULL)
+    {
+      self->on_message = g_list_delete_link (self->on_message, entry);
+      Py_DECREF (callback);
+    }
+    else
+    {
+      PyErr_SetString (PyExc_ValueError, "unknown callback");
+      return NULL;
+    }
+
+    if (self->on_message == NULL)
+    {
+      g_signal_handlers_disconnect_by_func (self->handle, PyScript_on_message, self);
+    }
+  }
+  else
+  {
+    PyErr_SetString (PyExc_NotImplementedError, "unsupported signal");
+    return NULL;
+  }
+
   Py_RETURN_NONE;
+}
+
+static void
+PyScript_on_message (PyScript * self, const gchar * message, const gchar * data, gint data_size, Script * handle)
+{
+  PyGILState_STATE gstate;
+
+  gstate = PyGILState_Ensure ();
+
+  if (g_object_get_data (G_OBJECT (handle), "pyobject") == self)
+  {
+    GList * callbacks, * cur;
+
+    g_list_foreach (self->on_message, (GFunc) Py_IncRef, NULL);
+    callbacks = g_list_copy (self->on_message);
+
+    for (cur = callbacks; cur != NULL; cur = cur->next)
+    {
+      PyObject * result = PyObject_CallFunction ((PyObject *) cur->data, "ss#", message, data, data_size);
+      if (result == NULL)
+        PyErr_Clear ();
+      else
+        Py_DECREF (result);
+    }
+
+    g_list_free_full (callbacks, (GDestroyNotify) Py_DecRef);
+  }
+
+  PyGILState_Release (gstate);
 }
 
 
@@ -402,6 +652,8 @@ PyMODINIT_FUNC
 initfrida (void)
 {
   PyObject * module;
+
+  PyEval_InitThreads ();
 
   g_type_init ();
   gum_init_with_features ((GumFeatureFlags) (GUM_FEATURE_ALL & ~GUM_FEATURE_SYMBOL_LOOKUP));
