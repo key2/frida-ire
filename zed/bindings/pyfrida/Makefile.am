@@ -5,19 +5,19 @@ SERVER := $(top_builddir)/../../frida-ire-universal/zed-server
 endif
 
 pyexec_LTLIBRARIES = \
-        frida.la
+        _frida.la
 noinst_LTLIBRARIES = \
 	libpyfrida-data.la \
 	libpyfrida.la
 
-frida_la_SOURCES = \
+_frida_la_SOURCES = \
         pyfrida.c
-frida_la_LDFLAGS = \
-	-export-symbols-regex "^initfrida$$" \
+_frida_la_LDFLAGS = \
+	-export-symbols-regex "^init_frida$$" \
 	-module -avoid-version -shared \
 	$(PYTHON_LDFLAGS) \
 	$(ZED_LDFLAGS)
-frida_la_LIBADD = \
+_frida_la_LIBADD = \
 	$(builddir)/libpyfrida.la \
 	$(builddir)/libpyfrida-data.la \
 	$(top_builddir)/src/libzed-core.la \

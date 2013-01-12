@@ -80,7 +80,7 @@ static PyTypeObject PySessionType =
 {
   PyObject_HEAD_INIT (NULL)
   0,                                            /* ob_size           */
-  "frida.Session",                              /* tp_name           */
+  "_frida.Session",                             /* tp_name           */
   sizeof (PySession),                           /* tp_basicsize      */
   0,                                            /* tp_itemsize       */
   (destructor) PySession_dealloc,               /* tp_dealloc        */
@@ -121,7 +121,7 @@ static PyTypeObject PyScriptType =
 {
   PyObject_HEAD_INIT (NULL)
   0,                                            /* ob_size           */
-  "frida.Script",                               /* tp_name           */
+  "_frida.Script",                              /* tp_name           */
   sizeof (PyScript),                            /* tp_basicsize      */
   0,                                            /* tp_itemsize       */
   (destructor) PyScript_dealloc,                /* tp_dealloc        */
@@ -606,7 +606,7 @@ run_main_loop (gpointer data)
 }
 
 PyMODINIT_FUNC
-initfrida (void)
+init_frida (void)
 {
   PyObject * json;
 
@@ -633,5 +633,5 @@ initfrida (void)
   if (PyType_Ready (&PyScriptType) < 0)
     return;
 
-  Py_InitModule ("frida", PyFrida_methods);
+  Py_InitModule ("_frida", PyFrida_methods);
 }
