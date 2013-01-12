@@ -48,6 +48,14 @@ public class SessionManager : Object {
 		}
 		assert (handle != 0);
 		session_by_handle.unset (handle);
+
+		var source = new IdleSource ();
+		source.set_callback (() => {
+			if (session_by_pid.is_empty)
+				release_host_session ();
+			return false;
+		});
+		source.attach (main_context);
 	}
 
 	private Object create<T> () {
@@ -71,14 +79,7 @@ public class SessionManager : Object {
 			parent.session_by_pid = null;
 			parent.session_by_handle = null;
 
-			parent.local_session = null;
-			yield parent.local_provider.close ();
-			parent.local_provider = null;
-#if !WINDOWS
-			parent.server.destroy ();
-			parent.server = null;
-#endif
-
+			yield parent.release_host_session ();
 		}
 	}
 
@@ -88,7 +89,7 @@ public class SessionManager : Object {
 		protected override async Session perform_operation () throws Error {
 			var session = parent.session_by_pid[pid];
 			if (session == null) {
-				yield parent.ensure_host_session_is_available ();
+				yield parent.ensure_host_session ();
 
 				var agent_session_id = yield parent.local_session.attach_to (pid);
 				var agent_session = yield parent.local_provider.obtain_agent_session (agent_session_id);
@@ -113,7 +114,7 @@ public class SessionManager : Object {
 		}
 	}
 
-	protected async Zed.HostSession ensure_host_session_is_available () throws IOError {
+	protected async Zed.HostSession ensure_host_session () throws IOError {
 		if (local_session == null) {
 #if !WINDOWS
 			server = new Server ();
@@ -127,6 +128,20 @@ public class SessionManager : Object {
 		}
 
 		return local_session;
+	}
+
+	protected async void release_host_session () {
+		if (local_session != null) {
+			local_session = null;
+
+			yield local_provider.close ();
+			local_provider = null;
+
+#if !WINDOWS
+			server.destroy ();
+			server = null;
+#endif
+		}
 	}
 
 	private void on_agent_session_closed (Zed.AgentSessionId id, Error? error) {
@@ -242,6 +257,7 @@ public class SessionManager : Object {
 
 public class Session : Object {
 	private weak SessionManager manager;
+	private bool is_closed = false;
 
 	public uint pid {
 		get;
@@ -310,11 +326,9 @@ public class Session : Object {
 	}
 
 	public async void _do_close (bool may_block) {
-		if (manager == null)
+		if (is_closed)
 			return;
-
-		manager._release_session (this);
-		manager = null;
+		is_closed = true;
 
 		foreach (var script in script_by_id.values.to_array ())
 			yield script._do_unload (may_block);
@@ -326,6 +340,9 @@ public class Session : Object {
 			}
 		}
 		internal_session = null;
+
+		manager._release_session (this);
+		manager = null;
 
 		closed ();
 	}
@@ -348,7 +365,7 @@ public class Session : Object {
 		}
 
 		protected override void validate_operation () throws Error {
-			if (parent.manager == null)
+			if (parent.is_closed)
 				throw new IOError.FAILED ("invalid operation (session is closed)");
 		}
 	}
