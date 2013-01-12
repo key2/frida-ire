@@ -6,9 +6,11 @@ frida_la_SOURCES = \
 frida_la_LDFLAGS = \
 	-export-symbols-regex "^initfrida$$" \
 	-module -avoid-version -shared \
+	$(PYTHON_LDFLAGS) \
 	$(ZED_LDFLAGS)
 frida_la_LIBADD = \
 	$(top_srcdir)/src/libzed-core.la \
+	$(PYTHON_LIBS) \
 	$(ZED_LIBS)
 
 AM_CPPFLAGS = \
