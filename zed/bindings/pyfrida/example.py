@@ -31,3 +31,5 @@ script.post_message({'name': '+syn'})
 
 print "Waiting for messages..."
 raw_input()
+
+print "Goodbye."

@@ -235,7 +235,10 @@ PySessionManager_init (PySessionManager * self, PyObject * args, PyObject * kwds
 static void
 PySessionManager_dealloc (PySessionManager * self)
 {
+  Py_BEGIN_ALLOW_THREADS
   g_object_unref (self->handle);
+  Py_END_ALLOW_THREADS
+
   self->ob_type->tp_free ((PyObject *) self);
 }
 
@@ -304,7 +307,9 @@ PySession_dealloc (PySession * self)
   if (self->handle != NULL)
   {
     g_object_set_data (G_OBJECT (self->handle), "pyobject", NULL);
+    Py_BEGIN_ALLOW_THREADS
     g_object_unref (self->handle);
+    Py_END_ALLOW_THREADS
   }
 
   self->ob_type->tp_free ((PyObject *) self);
@@ -480,7 +485,9 @@ PyScript_dealloc (PyScript * self)
   if (self->handle != NULL)
   {
     g_object_set_data (G_OBJECT (self->handle), "pyobject", NULL);
+    Py_BEGIN_ALLOW_THREADS
     g_object_unref (self->handle);
+    Py_END_ALLOW_THREADS
   }
 
   self->ob_type->tp_free ((PyObject *) self);
