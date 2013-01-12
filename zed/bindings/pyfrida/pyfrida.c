@@ -8,18 +8,11 @@ static PyObject * json_dumps;
 
 static GMainLoop * main_loop;
 static GMainContext * main_context;
+static SessionManager * session_manager;
 
 
-typedef struct _PySessionManager PySessionManager;
 typedef struct _PySession        PySession;
 typedef struct _PyScript         PyScript;
-
-struct _PySessionManager
-{
-  PyObject_HEAD
-
-  SessionManager * handle;
-};
 
 struct _PySession
 {
@@ -37,9 +30,7 @@ struct _PyScript
   GList * on_message;
 };
 
-static int PySessionManager_init (PySessionManager * self, PyObject * args, PyObject * kwds);
-static void PySessionManager_dealloc (PySessionManager * self);
-static PyObject * PySessionManager_obtain_session_for (PySessionManager * self, PyObject * args);
+static PyObject * PyFrida_attach (PyObject * self, PyObject * args);
 
 static PyObject * PySession_from_handle (Session * handle);
 static int PySession_init (PySession * self, PyObject * args, PyObject * kwds);
@@ -60,9 +51,9 @@ static PyObject * PyScript_on (PyScript * self, PyObject * args);
 static PyObject * PyScript_off (PyScript * self, PyObject * args);
 static void PyScript_on_message (PyScript * self, const gchar * message, const gchar * data, gint data_size, Script * handle);
 
-static PyMethodDef PySessionManager_methods[] =
+static PyMethodDef PyFrida_methods[] =
 {
-  { "obtain_session_for", (PyCFunction) PySessionManager_obtain_session_for, 1, "Obtain session for a PID." },
+  { "attach", (PyCFunction) PyFrida_attach, 1, "Attach to a PID." },
   { NULL }
 };
 
@@ -83,47 +74,6 @@ static PyMethodDef PyScript_methods[] =
   { "on", (PyCFunction) PyScript_on, 2, "Add an event handler." },
   { "off", (PyCFunction) PyScript_off, 2, "Remove an event handler." },
   { NULL }
-};
-
-static PyTypeObject PySessionManagerType =
-{
-  PyObject_HEAD_INIT (NULL)
-  0,                                            /* ob_size           */
-  "frida.SessionManager",                       /* tp_name           */
-  sizeof (PySessionManager),                    /* tp_basicsize      */
-  0,                                            /* tp_itemsize       */
-  (destructor) PySessionManager_dealloc,        /* tp_dealloc        */
-  NULL,                                         /* tp_print          */
-  NULL,                                         /* tp_getattr        */
-  NULL,                                         /* tp_setattr        */
-  NULL,                                         /* tp_compare        */
-  NULL,                                         /* tp_repr           */
-  NULL,                                         /* tp_as_number      */
-  NULL,                                         /* tp_as_sequence    */
-  NULL,                                         /* tp_as_mapping     */
-  NULL,                                         /* tp_hash           */
-  NULL,                                         /* tp_call           */
-  NULL,                                         /* tp_str            */
-  NULL,                                         /* tp_getattro       */
-  NULL,                                         /* tp_setattro       */
-  NULL,                                         /* tp_as_buffer      */
-  Py_TPFLAGS_DEFAULT,                           /* tp_flags          */
-  "Frida Session Manager",                      /* tp_doc            */
-  NULL,                                         /* tp_traverse       */
-  NULL,                                         /* tp_clear          */
-  NULL,                                         /* tp_richcompare    */
-  0,                                            /* tp_weaklistoffset */
-  NULL,                                         /* tp_iter           */
-  NULL,                                         /* tp_iternext       */
-  PySessionManager_methods,                     /* tp_methods        */
-  NULL,                                         /* tp_members        */
-  NULL,                                         /* tp_getset         */
-  NULL,                                         /* tp_base           */
-  NULL,                                         /* tp_dict           */
-  NULL,                                         /* tp_descr_get      */
-  NULL,                                         /* tp_descr_set      */
-  0,                                            /* tp_dictoffset     */
-  (initproc) PySessionManager_init,             /* tp_init           */
 };
 
 static PyTypeObject PySessionType =
@@ -209,6 +159,29 @@ static PyTypeObject PyScriptType =
 };
 
 
+static PyObject *
+PyFrida_attach (PyObject * self, PyObject * args)
+{
+  long pid;
+  GError * error = NULL;
+  Session * handle;
+
+  if (!PyArg_ParseTuple (args, "l", &pid))
+    return NULL;
+
+  Py_BEGIN_ALLOW_THREADS
+  handle = session_manager_obtain_session_for (session_manager, (guint) pid, &error);
+  Py_END_ALLOW_THREADS
+  if (error != NULL)
+  {
+    PyErr_SetString (PyExc_SystemError, error->message);
+    g_error_free (error);
+    return NULL;
+  }
+
+  return PySession_from_handle (handle);
+}
+
 static gboolean
 PyFrida_parse_signal_method_args (PyObject * args, const char ** signal, PyObject ** callback)
 {
@@ -222,47 +195,6 @@ PyFrida_parse_signal_method_args (PyObject * args, const char ** signal, PyObjec
   }
 
   return TRUE;
-}
-
-
-static int
-PySessionManager_init (PySessionManager * self, PyObject * args, PyObject * kwds)
-{
-  self->handle = session_manager_new (main_context);
-  return 0;
-}
-
-static void
-PySessionManager_dealloc (PySessionManager * self)
-{
-  Py_BEGIN_ALLOW_THREADS
-  g_object_unref (self->handle);
-  Py_END_ALLOW_THREADS
-
-  self->ob_type->tp_free ((PyObject *) self);
-}
-
-static PyObject *
-PySessionManager_obtain_session_for (PySessionManager * self, PyObject * args)
-{
-  long pid;
-  GError * error = NULL;
-  Session * handle;
-
-  if (!PyArg_ParseTuple (args, "l", &pid))
-    return NULL;
-
-  Py_BEGIN_ALLOW_THREADS
-  handle = session_manager_obtain_session_for (self->handle, (guint) pid, &error);
-  Py_END_ALLOW_THREADS
-  if (error != NULL)
-  {
-    PyErr_SetString (PyExc_SystemError, error->message);
-    g_error_free (error);
-    return NULL;
-  }
-
-  return PySession_from_handle (handle);
 }
 
 
@@ -677,7 +609,6 @@ PyMODINIT_FUNC
 initfrida (void)
 {
   PyObject * json;
-  PyObject * module;
 
   PyEval_InitThreads ();
 
@@ -692,10 +623,7 @@ initfrida (void)
   main_context = g_main_context_new ();
   main_loop = g_main_loop_new (main_context, FALSE);
   g_thread_create (run_main_loop, NULL, FALSE, NULL);
-
-  PySessionManagerType.tp_new = PyType_GenericNew;
-  if (PyType_Ready (&PySessionManagerType) < 0)
-    return;
+  session_manager = session_manager_new (main_context);
 
   PySessionType.tp_new = PyType_GenericNew;
   if (PyType_Ready (&PySessionType) < 0)
@@ -705,15 +633,5 @@ initfrida (void)
   if (PyType_Ready (&PyScriptType) < 0)
     return;
 
-  module = Py_InitModule ("frida", NULL);
-
-  Py_INCREF (&PySessionManagerType);
-  PyModule_AddObject (module, "SessionManager", (PyObject *) &PySessionManagerType);
-
-  Py_INCREF (&PySessionType);
-  PyModule_AddObject (module, "Session", (PyObject *) &PySessionType);
-
-  Py_INCREF (&PyScriptType);
-  PyModule_AddObject (module, "Script", (PyObject *) &PyScriptType);
+  Py_InitModule ("frida", PyFrida_methods);
 }
-
