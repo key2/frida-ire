@@ -101,6 +101,7 @@
 /zed/src/core/host-session-service.c
 /zed/src/core/linux/linjector.c
 /zed/src/core/linux/linux-host-session.c
+/zed/src/core/session-manager.c
 /zed/src/core/system.c
 /zed/src/core/tcp/tcp-host-session.c
 /zed/src/zed

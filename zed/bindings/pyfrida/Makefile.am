@@ -4,7 +4,15 @@ pyexec_LTLIBRARIES = \
 frida_la_SOURCES = \
         pyfrida.c
 frida_la_LDFLAGS = \
-	-module -avoid-version -shared
+	-export-symbols-regex "^initfrida$$" \
+	-module -avoid-version -shared \
+	$(ZED_LDFLAGS)
+frida_la_LIBADD = \
+	$(top_srcdir)/src/libzed-core.la \
+	$(ZED_LIBS)
 
 AM_CPPFLAGS = \
-	$(PYTHON_CFLAGS)
+	-I $(top_srcdir)/lib/interfaces \
+	-I $(top_srcdir)/src \
+	$(PYTHON_CFLAGS) \
+	$(ZED_CFLAGS)
