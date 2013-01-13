@@ -52,6 +52,48 @@ Process.enumerateRanges(\"%s\", {
         for data in result:
             yield Range(data['address'], data['size'], data['protection'])
 
+    def _exec_script(self, script_source, post_hook = None):
+        script = self._session.create_script(script_source)
+        return execute_script(script, post_hook)
+
+    def find_base_address(self, module_name):
+        return self._exec_script("send(Module.findBaseAddress(\"%s\"));" % module_name)
+
+    def read_bytes(self, address, length):
+        return self._exec_script("send(null, Memory.readByteArray(%d, %d));" % (address, length))
+
+    def read_utf8(self, address, length = -1):
+        return self._exec_script("send(Memory.readUtf8String(%d, %d));" % (address, length))
+
+    def write_bytes(self, address, bytes):
+        script = \
+"""
+recv(function(bytes) {
+    for (var i = 0; i < bytes.length; i++)
+        Memory.writeU8(bytes[i], %d + i);
+    send(true);
+});
+""" % address
+
+        def send_data(script):
+            script.post_message([ord(x) for x in bytes])
+
+        return self._exec_script(script, send_data)
+
+    def write_utf8(self, address, string):
+        script = \
+"""
+recv(function(string) {
+    Memory.writeUtf8String(string, %d);
+    send(true);
+});
+""" % address
+
+        def send_data(script):
+            script.post_message(string)
+
+        return self._exec_script(script, send_data)
+
 class Module:
     def __init__(self, name, address, path, _session):
         self.name = name
@@ -113,11 +155,14 @@ class Range:
 class Error(Exception):
     pass
 
-def execute_script(script):
+def execute_script(script, post_hook = None):
 
     def msg(message, data):
         if message['type'] == 'send':
-            result['data'] = message['payload']
+            if len(data) > 0:
+                result['data'] = data
+            else:
+                result['data'] = message['payload']
         elif message['type'] == 'error':
             result['error'] = message['description']
         event.set()
@@ -127,6 +172,8 @@ def execute_script(script):
 
     script.on('message', msg)
     script.load()
+    if post_hook:
+      post_hook(script)
     event.wait()
     script.unload()
 
