@@ -1,8 +1,37 @@
-
+import sys
 import _frida
 import threading
 import traceback
+import subprocess
 
+if sys.platform == 'linux2':
+
+  def find_process_names():
+      """Return a dict of `pid`:`process name` pairs."""
+      process_names = {}
+      pl = subprocess.Popen(['ps', '-eo', 'pid,cmd'], stdout=subprocess.PIPE).communicate()[0]
+      for line in pl.split('\n'):
+          l = line.strip()
+          if len(l) == 0:
+              continue
+          s = l.find(" ")
+          try:
+              pid = int(l[0:s])
+              cmd = l[s:]
+              process_names[pid] = cmd
+          except:
+              pass
+      return process_names
+
+# FIXME add similar code for OSX and Windows
+
+def find_pid(process_name):
+    """Find first pid with where the process name contains the string given by `process_name`."""
+    process_names = find_process_names()
+    for key, value in process_names.iteritems():
+      if process_name in value:
+        return key
+    return -1
 
 def attach(pid, device_id = None):
     return Process(_frida.attach(pid))
