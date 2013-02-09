@@ -159,7 +159,7 @@ def execute_script(script, post_hook = None):
 
     def msg(message, data):
         if message['type'] == 'send':
-            if len(data) > 0:
+            if data is not None:
                 result['data'] = data
             else:
                 result['data'] = message['payload']
