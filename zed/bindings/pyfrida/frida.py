@@ -29,8 +29,8 @@ def find_pid(process_name):
     """Find first pid with where the process name contains the string given by `process_name`."""
     process_names = find_process_names()
     for key, value in process_names.iteritems():
-      if process_name in value:
-        return key
+        if process_name in value:
+            return key
     return -1
 
 def attach(pid, device_id = None):
@@ -46,18 +46,15 @@ class Process:
 var modules = [];
 Process.enumerateModules({
     onMatch: function(name, address, path) {
-        modules.push({name: name, address: address, path: path});
+        modules.push({name: name, address: address.toString(), path: path});
     },
     onComplete: function() {
         send(modules);
     }
 });
 """)
-
-        result = execute_script(script)
-
-        for data in result:
-          yield Module(data['name'], data['address'], data['path'], self._session)
+        for data in execute_script(script):
+            yield Module(data['name'], int(data['address']), data['path'], self._session)
 
     """
       @param protection example '--x'
@@ -68,38 +65,36 @@ Process.enumerateModules({
 var ranges = [];
 Process.enumerateRanges(\"%s\", {
     onMatch: function(address, size, protection) {
-        ranges.push({address: address, size: size, protection: protection});
+        ranges.push({address: address.toString(), size: size, protection: protection});
     },
     onComplete: function() {
         send(ranges);
     }
 });
 """ % protection)
-
-        result = execute_script(script)
-
-        for data in result:
-            yield Range(data['address'], data['size'], data['protection'])
+        for data in execute_script(script):
+            yield Range(int(data['address']), data['size'], data['protection'])
 
     def _exec_script(self, script_source, post_hook = None):
         script = self._session.create_script(script_source)
         return execute_script(script, post_hook)
 
     def find_base_address(self, module_name):
-        return self._exec_script("send(Module.findBaseAddress(\"%s\"));" % module_name)
+        return int(self._exec_script("send(Module.findBaseAddress(\"%s\").toString());" % module_name))
 
     def read_bytes(self, address, length):
-        return self._exec_script("send(null, Memory.readByteArray(%d, %d));" % (address, length))
+        return self._exec_script("send(null, Memory.readByteArray(ptr(\"%u\"), %u));" % (address, length))
 
     def read_utf8(self, address, length = -1):
-        return self._exec_script("send(Memory.readUtf8String(%d, %d));" % (address, length))
+        return self._exec_script("send(Memory.readUtf8String(ptr(\"%u\"), %u));" % (address, length))
 
     def write_bytes(self, address, bytes):
         script = \
 """
 recv(function(bytes) {
+    var base = ptr("%u");
     for (var i = 0; i < bytes.length; i++)
-        Memory.writeU8(bytes[i], %d + i);
+        Memory.writeU8(base.add(i), bytes[i]);
     send(true);
 });
 """ % address
@@ -113,7 +108,7 @@ recv(function(bytes) {
         script = \
 """
 recv(function(string) {
-    Memory.writeUtf8String(string, %d);
+    Memory.writeUtf8String(ptr("%u"), string);
     send(true);
 });
 """ % address
@@ -136,17 +131,15 @@ class Module:
 var exports = [];
 Module.enumerateExports(\"%s\", {
     onMatch: function(name, address) {
-        exports.push({name: name, address: address});
+        exports.push({name: name, address: address.toString()});
     },
     onComplete: function() {
         send(exports);
     }
 });
 """ % self.name)
-
-        result = execute_script(script)
-        for export in result:
-          yield Export(export["name"], export["address"])
+        for export in execute_script(script):
+            yield Export(export["name"], int(export["address"]))
 
     """
       @param protection example '--x'
@@ -157,18 +150,15 @@ Module.enumerateExports(\"%s\", {
 var ranges = [];
 Module.enumerateRanges(\"%s\", \"%s\", {
     onMatch: function(address, size, protection) {
-        ranges.push({address: address, size: size, protection: protection});
+        ranges.push({address: address.toString(), size: size, protection: protection});
     },
     onComplete: function() {
         send(ranges);
     }
 });
 """ % (self.name, protection))
-
-        result = execute_script(script)
-
-        for data in result:
-            yield Range(data['address'], data['size'], data['protection'])
+        for data in execute_script(script):
+            yield Range(int(data['address']), data['size'], data['protection'])
 
 class Export:
     def __init__(self, name, address):
@@ -177,15 +167,14 @@ class Export:
 
 class Range:
     def __init__(self, address, size, protection):
-      self.address = address
-      self.size = size
-      self.protection = protection
+        self.address = address
+        self.size = size
+        self.protection = protection
 
 class Error(Exception):
     pass
 
 def execute_script(script, post_hook = None):
-
     def msg(message, data):
         if message['type'] == 'send':
             if data is not None:
@@ -202,7 +191,7 @@ def execute_script(script, post_hook = None):
     script.on('message', msg)
     script.load()
     if post_hook:
-      post_hook(script)
+        post_hook(script)
     event.wait()
     script.unload()
 
@@ -210,6 +199,3 @@ def execute_script(script, post_hook = None):
         raise Error, result['error']
 
     return result['data']
-
-
-
