@@ -13,15 +13,21 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\generated">
+      <UniqueIdentifier>{0b786b27-c4c4-431e-b6a7-4b72c9f9b186}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="$(IntDir)frida.c">
+    <ClCompile Include="pyfrida.c">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(IntDir)\session-manager.c">
+      <Filter>Source Files\generated</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="frida.defs">
-      <Filter>Resource Files</Filter>
-    </None>
+    <CustomBuild Include="session-manager.vala">
+      <Filter>Source Files</Filter>
+    </CustomBuild>
   </ItemGroup>
 </Project>
