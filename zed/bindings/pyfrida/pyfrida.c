@@ -1,7 +1,16 @@
 #include "pyfrida.h"
 
 #include <gum/gum.h>
+#ifdef _MSC_VER
+# pragma warning (push)
+# pragma warning (disable: 4211)
+#endif
 #include <Python.h>
+#ifdef _MSC_VER
+# pragma warning (pop)
+#endif
+
+#define FRIDA_FUNCPTR_TO_POINTER(f) (GSIZE_TO_POINTER (f))
 
 static PyObject * json_loads;
 static PyObject * json_dumps;
@@ -166,6 +175,8 @@ PyFrida_attach (PyObject * self, PyObject * args)
   GError * error = NULL;
   Session * handle;
 
+  (void) self;
+
   if (!PyArg_ParseTuple (args, "l", &pid))
     return NULL;
 
@@ -222,8 +233,12 @@ PySession_from_handle (Session * handle)
 static int
 PySession_init (PySession * self, PyObject * args, PyObject * kwds)
 {
+  (void) args;
+  (void) kwds;
+
   self->handle = NULL;
   self->on_close = NULL;
+
   return 0;
 }
 
@@ -232,7 +247,7 @@ PySession_dealloc (PySession * self)
 {
   if (self->on_close != NULL)
   {
-    g_signal_handlers_disconnect_by_func (self->handle, PySession_on_close, self);
+    g_signal_handlers_disconnect_by_func (self->handle, FRIDA_FUNCPTR_TO_POINTER (PySession_on_close), self);
     g_list_free_full (self->on_close, (GDestroyNotify) Py_DecRef);
   }
 
@@ -250,9 +265,12 @@ PySession_dealloc (PySession * self)
 static PyObject *
 PySession_close (PySession * self, PyObject * args)
 {
+  (void) args;
+
   Py_BEGIN_ALLOW_THREADS
   session_close (self->handle);
   Py_END_ALLOW_THREADS
+
   Py_RETURN_NONE;
 }
 
@@ -334,7 +352,7 @@ PySession_off (PySession * self, PyObject * args)
 
     if (self->on_close == NULL)
     {
-      g_signal_handlers_disconnect_by_func (self->handle, PySession_on_close, self);
+      g_signal_handlers_disconnect_by_func (self->handle, FRIDA_FUNCPTR_TO_POINTER (PySession_on_close), self);
     }
   }
   else
@@ -400,8 +418,12 @@ PyScript_from_handle (Script * handle)
 static int
 PyScript_init (PyScript * self, PyObject * args, PyObject * kwds)
 {
+  (void) args;
+  (void) kwds;
+
   self->handle = NULL;
   self->on_message = NULL;
+
   return 0;
 }
 
@@ -410,7 +432,7 @@ PyScript_dealloc (PyScript * self)
 {
   if (self->on_message != NULL)
   {
-    g_signal_handlers_disconnect_by_func (self->handle, PyScript_on_message, self);
+    g_signal_handlers_disconnect_by_func (self->handle, FRIDA_FUNCPTR_TO_POINTER (PyScript_on_message), self);
     g_list_free_full (self->on_message, (GDestroyNotify) Py_DecRef);
   }
 
@@ -430,6 +452,8 @@ PyScript_load (PyScript * self, PyObject * args)
 {
   GError * error = NULL;
 
+  (void) args;
+
   Py_BEGIN_ALLOW_THREADS
   script_load (self->handle, &error);
   Py_END_ALLOW_THREADS
@@ -447,6 +471,8 @@ static PyObject *
 PyScript_unload (PyScript * self, PyObject * args)
 {
   GError * error = NULL;
+
+  (void) args;
 
   Py_BEGIN_ALLOW_THREADS
   script_unload (self->handle, &error);
@@ -545,7 +571,7 @@ PyScript_off (PyScript * self, PyObject * args)
 
     if (self->on_message == NULL)
     {
-      g_signal_handlers_disconnect_by_func (self->handle, PyScript_on_message, self);
+      g_signal_handlers_disconnect_by_func (self->handle, FRIDA_FUNCPTR_TO_POINTER (PyScript_on_message), self);
     }
   }
   else
@@ -598,6 +624,8 @@ PyScript_on_message (PyScript * self, const gchar * message, const gchar * data,
 static gpointer
 run_main_loop (gpointer data)
 {
+  (void) data;
+
   g_main_context_push_thread_default (main_context);
   g_main_loop_run (main_loop);
   g_main_context_pop_thread_default (main_context);
