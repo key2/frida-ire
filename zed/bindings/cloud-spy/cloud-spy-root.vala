@@ -24,7 +24,9 @@ namespace CloudSpy {
 		private async void ensure_devices () throws IOError {
 			if (devices.size > 0)
 				return;
-			add_device (new LocalDevice (last_device_id++));
+			var local = new LocalDevice (last_device_id++);
+			yield local.open ();
+			add_device (local);
 
 #if !LINUX
 			fruity = new Zed.FruityHostSessionBackend ();
@@ -290,6 +292,10 @@ namespace CloudSpy {
 				server = s;
 #endif
 				local_provider = p;
+			}
+
+			public async void open () throws IOError {
+				yield base.obtain_host_session ();
 			}
 
 			public override async void close () {
