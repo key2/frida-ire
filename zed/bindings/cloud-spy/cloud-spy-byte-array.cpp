@@ -65,22 +65,63 @@ cloud_spy_variant_invoke (NPObject * npobj, NPIdentifier name, const NPVariant *
 
   (void) args;
 
-  if (strcmp (static_cast<NPString *> (name)->UTF8Characters, "toString") == 0 && arg_count == 0)
+  if (strcmp (static_cast<NPString *> (name)->UTF8Characters, "toString") == 0 && arg_count <= 1)
   {
-    GString * s;
-    gint i;
+    gboolean base64 = FALSE;
 
-    s = g_string_sized_new (3 * self->data_length);
-    for (i = 0; i != self->data_length; i++)
+    if (arg_count == 1)
     {
-      if (i != 0)
-        g_string_append_c (s, ' ');
-      g_string_append_printf (s, "%02x", (gint) self->data[i]);
+      if (args[0].type == NPVariantType_String)
+      {
+        gchar * format = cloud_spy_npstring_to_cstring (&args[0].value.stringValue);
+
+        if (strcmp (format, "base64") == 0)
+        {
+          base64 = TRUE;
+        }
+        else if (strcmp (format, "hex") == 0)
+        {
+          base64 = FALSE;
+        }
+        else
+        {
+          g_free (format);
+          cloud_spy_nsfuncs->setexception (npobj, "invalid format specified");
+          return true;
+        }
+
+        g_free (format);
+      }
+      else
+      {
+        cloud_spy_nsfuncs->setexception (npobj, "invalid argument");
+        return true;
+      }
     }
 
-    cloud_spy_init_npvariant_with_string (result, s->str);
+    if (base64)
+    {
+      gchar * str = g_base64_encode (self->data, self->data_length);
+      cloud_spy_init_npvariant_with_string (result, str);
+      g_free (str);
+    }
+    else
+    {
+      GString * s;
+      gint i;
 
-    g_string_free (s, TRUE);
+      s = g_string_sized_new (3 * self->data_length);
+      for (i = 0; i != self->data_length; i++)
+      {
+        if (i != 0)
+          g_string_append_c (s, ' ');
+        g_string_append_printf (s, "%02x", (gint) self->data[i]);
+      }
+
+      cloud_spy_init_npvariant_with_string (result, s->str);
+
+      g_string_free (s, TRUE);
+    }
 
     return true;
   }
