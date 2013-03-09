@@ -120,7 +120,6 @@
 /zed/tests/async-harness.c
 /zed/tests/inject-attacker.log
 /zed/tests/inject-victim
-/zed/tests/inject-victim.c
 /zed/tests/labrats/bin
 /zed/tests/labrats/obj
 /zed/tests/main.c
