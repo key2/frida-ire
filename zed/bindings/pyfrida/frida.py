@@ -4,8 +4,39 @@ import threading
 import traceback
 import subprocess
 
-if sys.platform == 'linux2':
+if sys.platform == 'win32':
+  def find_process_names():
+    process_names = {}
+    pl = subprocess.Popen(["tasklist","/FO","CSV"],stdout=subprocess.PIPE).communicate()[0]
+    for line in pl.split('\n'):
+      tmp = line.split(',')
+      try:
+        cmd = tmp[0].split('"')[1]
+        pid = int(tmp[1].split('"')[1])
+        process_names[pid] = cmd
+      except:
+        pass
+    return process_names
 
+if sys.platform == 'darwin':
+  def find_process_names():
+      """Return a dict of `pid`:`process name` pairs."""
+      process_names = {}
+      pl = subprocess.Popen(['ps', 'axo', 'pid,command'], stdout=subprocess.PIPE).communicate()[0]
+      for line in pl.split('\n'):
+          l = line.strip()
+          if len(l) == 0:
+              continue
+          s = l.find(" ")
+          try:
+              pid = int(l[0:s])
+              cmd = l[s:]
+              process_names[pid] = cmd
+          except:
+              pass
+      return process_names
+
+if sys.platform == 'linux2':
   def find_process_names():
       """Return a dict of `pid`:`process name` pairs."""
       process_names = {}
